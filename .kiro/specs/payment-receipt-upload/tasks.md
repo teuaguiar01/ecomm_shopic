@@ -33,15 +33,15 @@
     - Implement error handling for incomplete receipt uploads
     - _Requirements: 1.4, 1.5, 3.4_
 
-- [ ] 4. Create admin receipt viewing functionality
-  - [ ] 4.1 Implement ReceiptViewer component for admin panel
+- [x] 4. Create admin receipt viewing functionality
+  - [x] 4.1 Implement ReceiptViewer component for admin panel
     - Create components/admin/receiptViewer.jsx with dynamic receipt URL fetching
     - Add image display and zoom functionality
     - Add status update controls for payment validation
     - Implement loading states and error handling for missing receipts
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
 
-  - [ ] 4.2 Integrate receipt viewer into admin order details
+  - [x] 4.2 Integrate receipt viewer into admin order details
     - Modify app/admin/order/[id]/page.js to display receipt when available
     - Add payment status update functionality
     - Implement conditional rendering for orders with/without receipts
