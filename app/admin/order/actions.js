@@ -30,8 +30,8 @@ async function updateOrderStatus(orderId, newStatus) {
     // Validate status
     const validStatuses = [
         "payment-pending",
-        "pending-verification",
-        "pending_verification", // Ambas as variações
+        "pending-verification", 
+        "pending_verification",
         "processing",
         "completed",
         "shipped",
@@ -44,38 +44,31 @@ async function updateOrderStatus(orderId, newStatus) {
         throw new Error("Invalid status provided")
     }
 
-    try {
-        const orderIdInt = parseInt(orderId);
-        
-        // Verificar se o pedido existe
-        const existingOrder = await prisma.order.findUnique({
-            where: { id: orderIdInt }
-        });
-        
-        if (!existingOrder) {
-            throw new Error(`Order with ID ${orderIdInt} not found`);
-        }
-        
-        console.log(`Updating order ${orderIdInt} from "${existingOrder.status}" to "${newStatus}"`);
-        
-        await prisma.order.update({
-            where: { id: orderIdInt },
-            data: { status: newStatus }
-        });
-
-        console.log(`Order ${orderIdInt} status updated successfully`);
-        
-        // Revalidar a página para mostrar os dados atualizados
-        revalidatePath(`/admin/order/${orderId}`);
-        revalidatePath('/admin');
-        
-        return { success: true, message: "Status updated successfully" };
-        
-    } catch (error) {
-        console.error("Error updating order status:", error);
-        console.error("OrderId:", orderId, "NewStatus:", newStatus);
-        throw new Error(`Failed to update order status: ${error.message}`);
+    const orderIdInt = parseInt(orderId);
+    
+    // Verificar se o pedido existe
+    const existingOrder = await prisma.order.findUnique({
+        where: { id: orderIdInt }
+    });
+    
+    if (!existingOrder) {
+        throw new Error(`Order with ID ${orderIdInt} not found`);
     }
+    
+    console.log(`Updating order ${orderIdInt} from "${existingOrder.status}" to "${newStatus}"`);
+    
+    await prisma.order.update({
+        where: { id: orderIdInt },
+        data: { status: newStatus }
+    });
+
+    console.log(`Order ${orderIdInt} status updated successfully`);
+    
+    // Revalidar a página para mostrar os dados atualizados
+    revalidatePath(`/admin/order/${orderId}`);
+    revalidatePath('/admin');
+    
+    return { success: true, message: "Status updated successfully" };
 }
 
 export { queryAllOrders, updateOrderStatus }

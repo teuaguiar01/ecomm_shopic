@@ -204,6 +204,8 @@ const ReceiptViewer = ({ orderId, currentStatus = "payment-pending" }) => {
             currentStatus === "processing" ? "bg-blue-100 text-blue-800" :
             currentStatus === "payment-pending" ? "bg-yellow-100 text-yellow-800" :
             currentStatus === "pending-verification" ? "bg-orange-100 text-orange-800" :
+            currentStatus === "shipped" ? "bg-blue-100 text-blue-800" :
+            currentStatus === "delivered" ? "bg-green-100 text-green-800" :
             currentStatus === "canceled" ? "bg-red-100 text-red-800" :
             currentStatus === "completed" ? "bg-green-100 text-green-800" :
             "bg-gray-100 text-gray-800"
@@ -211,6 +213,8 @@ const ReceiptViewer = ({ orderId, currentStatus = "payment-pending" }) => {
             {currentStatus === "processing" ? "Processando" :
              currentStatus === "payment-pending" ? "Pagamento Pendente" :
              currentStatus === "pending-verification" ? "Aguardando Verificação" :
+             currentStatus === "shipped" ? "Enviado" :
+             currentStatus === "delivered" ? "Entregue" :
              currentStatus === "canceled" ? "Cancelado" :
              currentStatus === "completed" ? "Completado" :
              currentStatus}
