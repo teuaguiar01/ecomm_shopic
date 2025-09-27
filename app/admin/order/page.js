@@ -1,5 +1,5 @@
-import { AdminTable } from "@/components/admin/adminTable";
 import { prisma } from "@/utils/prisma";
+import OrdersTable from "@/components/admin/ordersTable";
 
 export default async function ManageOrders() {
     const orders = await prisma.order.findMany({
@@ -17,38 +17,68 @@ export default async function ManageOrders() {
 
     for (let i = 0; i < orders.length; i++) {
         const element = orders[i];
+
+        // LOG: Status original do banco
+        console.log(`🔍 PEDIDO ${element.id}:`);
+        console.log(`   Status original do banco: "${element.status}"`);
+        console.log(`   Tipo do status: ${typeof element.status}`);
+
         element.user = element.user.name
-        element.total = "R$"+element.total.toFixed(2)
-        switch(element.status) {
-            case "completed": element.status = "Completado"; break
-            case "shipped": element.status = "Enviado"; break
-            case "payment-pending": element.status = "Pagamento Pendente"; break
-            case "processing": element.status = "Processando"; break
-            case "waiting": element.status = "Aguardando"; break
-            case "delivered": element.status = "Entregue"; break
-            case "canceled": element.status = "Cancelado"; break
-            //status
+        element.total = "R$" + element.total.toFixed(2)
+
+        const originalStatus = element.status;
+
+        switch (element.status) {
+            case "completed":
+                element.status = "Completado";
+                console.log(`   ✅ Status mapeado para: "${element.status}"`);
+                break
+            case "shipped":
+                element.status = "Enviado";
+                console.log(`   ✅ Status mapeado para: "${element.status}"`);
+                break
+            case "payment-pending":
+            case "payment_pending":
+                element.status = "Pagamento Pendente";
+                console.log(`   ✅ Status mapeado para: "${element.status}"`);
+                break
+            case "pending-verification":
+            case "pending_verification":
+                element.status = "Aguardando Verificação";
+                console.log(`   ✅ Status mapeado para: "${element.status}"`);
+                break
+            case "processing":
+                element.status = "Processando";
+                console.log(`   ✅ Status mapeado para: "${element.status}"`);
+                break
+            case "waiting":
+                element.status = "Aguardando";
+                console.log(`   ✅ Status mapeado para: "${element.status}"`);
+                break
+            case "delivered":
+                element.status = "Entregue";
+                console.log(`   ✅ Status mapeado para: "${element.status}"`);
+                break
+            case "canceled":
+            case "cancelled":
+                element.status = "Cancelado";
+                console.log(`   ✅ Status mapeado para: "${element.status}"`);
+                break
+            default:
+                // Manter o status original mas formatado
+                const formattedStatus = originalStatus.charAt(0).toUpperCase() + originalStatus.slice(1).replace(/[-_]/g, ' ');
+                console.log(`   ⚠️  Status DESCONHECIDO: "${originalStatus}" -> formatado para: "${formattedStatus}"`);
+                element.status = formattedStatus;
+                break
         }
+
+        console.log(`   Status final na tabela: "${element.status}"`);
+        console.log('---');
     }
-
-    const actions = [
-        {
-            name: 'Edit',
-            color: 'blue',
-            dest: '/admin/order/$1'
-        }
-    ]
-
-    const headers = ['Pedido', 'Status', 'Total', 'Comprador', 'Action']
 
     return (
         <div>
-            <AdminTable
-                title="Pedidos"
-                headers={headers}
-                data={orders}
-                actions={actions}
-            />
+            <OrdersTable orders={orders} />
         </div>
     )
 }

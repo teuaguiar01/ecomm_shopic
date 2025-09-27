@@ -13,9 +13,21 @@ export function AdminTable(props) {
 		if (filterValue) {
 			setPropsData(
 				props.data.filter((el) => {
-					return el.name.toLowerCase().includes(filterValue.toLowerCase())
+					// Filtrar por diferentes campos dependendo do que existe
+					const searchFields = [
+						el.name,
+						el.user,
+						el.id?.toString(),
+						el.status
+					].filter(Boolean);
+					
+					return searchFields.some(field => 
+						field.toLowerCase().includes(filterValue.toLowerCase())
+					);
 				})
 			)
+		} else {
+			setPropsData(props.data)
 		}
 	}, [filterValue, props.data])
 
@@ -62,24 +74,44 @@ export function AdminTable(props) {
 									</TableCell>
 								))}
 								<TableCell className="border p-4">
-									{props.actions.map((action, index) => (
-										<Link
-											key={action.name + '-' + index}
-											href={action.dest.replace('$1', row.id)}
-										>
-											<button
-												className={
-													'bg-' +
-													action.color +
-													'-300 hover:bg-' +
-													action.color +
-													'-700 text-zin-900 hover:text-zinc-100 font-bold py-2 px-4 mr-2'
-												}
+									{props.actions.map((action, index) => {
+										const href = action.dest.replace('$1', row.id);
+										console.log(`🔗 LINK DEBUG:`);
+										console.log(`   Action: ${action.name}`);
+										console.log(`   Row ID: ${row.id}`);
+										console.log(`   Dest template: ${action.dest}`);
+										console.log(`   Final href: ${href}`);
+										console.log('---');
+										
+										return (
+											<Link
+												key={action.name + '-' + index}
+												href={href}
+												onClick={() => {
+													console.log(`🖱️  CLIQUE NO LINK:`);
+													console.log(`   Navegando para: ${href}`);
+													console.log(`   Row completo:`, row);
+												}}
 											>
-												{action.name}
-											</button>
-										</Link>
-									))}
+												<button
+													className={
+														'bg-' +
+														action.color +
+														'-300 hover:bg-' +
+														action.color +
+														'-700 text-zin-900 hover:text-zinc-100 font-bold py-2 px-4 mr-2'
+													}
+													onClick={(e) => {
+														console.log(`🔘 CLIQUE NO BOTÃO:`);
+														console.log(`   Event:`, e);
+														console.log(`   Href do link pai: ${href}`);
+													}}
+												>
+													{action.name}
+												</button>
+											</Link>
+										);
+									})}
 								</TableCell>
 							</TableRow>
 						))}
