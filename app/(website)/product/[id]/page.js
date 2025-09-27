@@ -36,7 +36,7 @@ export default async function Produto({ params, searchParams }) {
 		return imageURLs;
 	};
 
-	// const imageURLs = await getRandomDefaultImage();
+	const imageURLs = await getAllImageURLs();
 
 	pages = Math.ceil(pages / take)
 	const produto = await prisma.product.findFirst({
@@ -70,7 +70,7 @@ export default async function Produto({ params, searchParams }) {
 			<div className="flex flex-col lg:flex-row gap-8">
 				<div className="w-full lg:w-1/2">
 					<Carousel
-						images={staticImages}
+						images={imageURLs.length > 0 ? imageURLs : staticImages}
 					/>
 				</div>
 
