@@ -2,19 +2,18 @@ import { prisma } from "@/utils/prisma";
 import { getServerSession } from "@/app/api/auth/[...nextauth]/route";
 import { redirect } from "next/navigation";
 import ReceiptViewer from "@/components/admin/receiptViewer";
-import { updateOrderStatus } from "../actions";
-import OrderStatusUpdater from "@/components/admin/orderStatusUpdater";
+
 
 export default async function OrderDetails({ params }) {
     const session = await getServerSession();
-    
+
     // Check if user is admin
     if (!session || !session.user.role || session.user.role !== "admin") {
         redirect("/admin");
     }
 
     const orderId = parseInt(params.id);
-    
+
     // Fetch order details with related data
     const order = await prisma.order.findUnique({
         where: { id: orderId },
@@ -57,10 +56,11 @@ export default async function OrderDetails({ params }) {
 
     // Format status for display
     const getStatusDisplay = (status) => {
-        switch(status) {
+        switch (status) {
             case "completed": return "Completado";
             case "shipped": return "Enviado";
             case "payment-pending": return "Pagamento Pendente";
+            case "pending-verification": return "Aguardando Verificação";
             case "processing": return "Processando";
             case "waiting": return "Aguardando";
             case "delivered": return "Entregue";
@@ -70,10 +70,11 @@ export default async function OrderDetails({ params }) {
     };
 
     const getStatusColor = (status) => {
-        switch(status) {
+        switch (status) {
             case "completed": return "bg-green-100 text-green-800";
             case "shipped": return "bg-blue-100 text-blue-800";
             case "payment-pending": return "bg-yellow-100 text-yellow-800";
+            case "pending-verification": return "bg-orange-100 text-orange-800";
             case "processing": return "bg-blue-100 text-blue-800";
             case "waiting": return "bg-gray-100 text-gray-800";
             case "delivered": return "bg-green-100 text-green-800";
@@ -96,7 +97,7 @@ export default async function OrderDetails({ params }) {
                         {getStatusDisplay(order.status)}
                     </span>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                     <div>
                         <span className="font-medium text-gray-700">Data do Pedido:</span>
@@ -156,7 +157,7 @@ export default async function OrderDetails({ params }) {
                             <span className="font-medium text-gray-700">Email:</span>
                             <p className="text-gray-900">{order.user.email}</p>
                         </div>
-                        
+
                         {order.address && order.address.length > 0 && (
                             <div>
                                 <span className="font-medium text-gray-700">Endereço de Entrega:</span>
@@ -183,32 +184,14 @@ export default async function OrderDetails({ params }) {
                 </div>
             </div>
 
-            {/* Receipt Viewer - Only show for orders that might have receipts */}
-            {(order.status === "payment-pending" || 
-              order.status === "processing" || 
-              order.status === "completed" ||
-              order.status === "shipped" ||
-              order.status === "delivered") && (
-                <div className="bg-white rounded-lg shadow-sm border p-6">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">Comprovante de Pagamento</h2>
-                    <OrderStatusUpdater orderId={order.id} currentStatus={order.status}>
-                        {({ handleStatusUpdate, updating, error }) => (
-                            <>
-                                <ReceiptViewer 
-                                    orderId={order.id.toString()}
-                                    currentStatus={order.status}
-                                    onStatusUpdate={handleStatusUpdate}
-                                />
-                                {error && (
-                                    <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                                        <p className="text-red-700">{error}</p>
-                                    </div>
-                                )}
-                            </>
-                        )}
-                    </OrderStatusUpdater>
-                </div>
-            )}
+            {/* Receipt Viewer - Show for all orders */}
+            <div className="bg-white rounded-lg shadow-sm border p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Comprovante de Pagamento</h2>
+                <ReceiptViewer
+                    orderId={order.id.toString()}
+                    currentStatus={order.status}
+                />
+            </div>
         </div>
     );
 }

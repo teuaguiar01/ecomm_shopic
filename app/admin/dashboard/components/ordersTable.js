@@ -1,11 +1,9 @@
 'use client'
 
-import { Table, TableHead, TableRow, TableHeaderCell, TableBody, TableCell, Card, Flex, Title, Icon, Badge, Text, Metric, Button, DateRangePicker, SearchSelect, SearchSelectItem, Divider, Select, SelectItem, } from '@tremor/react';
-import { AlertCircleIcon, CheckIcon, ClockIcon, LoaderIcon, MoreHorizontalIcon, PackageCheckIcon, SearchIcon, TruckIcon, XCircle  } from 'lucide-react';
-import { Fragment, useEffect, useState } from 'react';
-import { Dialog, Transition } from "@headlessui/react";
-import ProductList from '@/components/order/productList';
-import { updateStatus } from '../actions';
+import { Table, TableHead, TableRow, TableHeaderCell, TableBody, TableCell, Card, Flex, Title, Icon, Badge, Text, Metric, Button, DateRangePicker, SearchSelect, SearchSelectItem } from '@tremor/react';
+import { AlertCircleIcon, CheckIcon, ClockIcon, LoaderIcon, PackageCheckIcon, SearchIcon, TruckIcon, XCircle, ExternalLinkIcon } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import ReceiptLink from '@/components/admin/receiptLink';
 import { statusTranslator } from '@/utils/orderStatusTranslator';
 import dayjs from 'dayjs';
 
@@ -14,11 +12,15 @@ dayjs.extend(require('dayjs/plugin/isBetween'));
 const deltaTypes = {
     waiting: { icon: ClockIcon, color: 'gray' },
     "payment-pending": { icon: ClockIcon, color: 'yellow' },
+    "payment_pending": { icon: ClockIcon, color: 'yellow' },
+    "pending-verification": { icon: AlertCircleIcon, color: 'orange' },
+    "pending_verification": { icon: AlertCircleIcon, color: 'orange' },
     completed: { icon: CheckIcon, color: 'emerald' },
     shipped: { icon: TruckIcon, color: 'lime' },
     delivered: { icon: PackageCheckIcon, color: 'green' },
     processing: { icon: LoaderIcon, color: 'blue' },
     "canceled": {icon: XCircle , color:'red' },
+    "cancelled": {icon: XCircle , color:'red' },
 }
 
 const numberformatter = (number, decimals = 0) =>
@@ -41,22 +43,9 @@ const filterByDateRange = (range, data) => {
 function OrdersTable({ orders }) {
     const [selectedCustomer, setSelectedCustomer] = useState('');
     const [filteredOrders, setFilteredOrders] = useState(orders);
-    const [selectedOrder, setSelectedOrder] = useState(null);
-    const [selectedStatus, setSelectedStatus] = useState('')
     const [selectedDateRange, setSelectedDateRange] = useState({});
-    const [isOpen, setIsOpen] = useState(false)
-    const [quantity, setQuantity] = useState(0)
     const [totalSold, setTotalSold] = useState(0)
     const [total, setTotal] = useState(0)
-
-    const closeModal = () => setIsOpen(false);
-
-    const openModal = () => setIsOpen(true);
-
-    const showOrderDetails = (order) => {
-        openModal();
-        setSelectedOrder(order);
-    }
 
     useEffect(() => {
         let filteredData = [...orders];
@@ -72,13 +61,7 @@ function OrdersTable({ orders }) {
         setFilteredOrders(filteredData)
     }, [orders, selectedCustomer, selectedDateRange]);
 
-    useEffect(() => {
-        let qty = 0
-        selectedOrder?.order_items?.forEach(item => {
-            qty += item.quantity
-        });
-        setQuantity(qty)
-    }, [selectedOrder])
+
 
     useEffect(() => {
         let total = 0, total2 = 0
@@ -137,122 +120,60 @@ function OrdersTable({ orders }) {
                 </Flex>
 
 
-                <Table className="mt-6">
-                    <TableHead>
-                        <TableRow>
-                            <TableHeaderCell>Pedido</TableHeaderCell>
-                            <TableHeaderCell className="text-right">Comprador</TableHeaderCell>
-                            <TableHeaderCell className="text-right">Contato</TableHeaderCell>
-                            <TableHeaderCell className="text-right">Total</TableHeaderCell>
-                            <TableHeaderCell className="text-right">Status</TableHeaderCell>
-                            <TableHeaderCell className="text-right">Ação</TableHeaderCell>
-                        </TableRow>
-                    </TableHead>
+                <div className="mt-6 overflow-x-auto">
+                    <Table>
+                        <TableHead>
+                            <TableRow>
+                                <TableHeaderCell className="w-16">ID</TableHeaderCell>
+                                <TableHeaderCell className="w-32">Comprador</TableHeaderCell>
+                                <TableHeaderCell className="w-20">Total</TableHeaderCell>
+                                <TableHeaderCell className="w-32">Status</TableHeaderCell>
+                                <TableHeaderCell className="w-20 text-center">Comprovante</TableHeaderCell>
+                                <TableHeaderCell className="w-24 text-center">Ação</TableHeaderCell>
+                            </TableRow>
+                        </TableHead>
 
-                    <TableBody>
-                        {filteredOrders
-                            .map((order) => (
-                                <TableRow key={order.id}>
-                                    <TableCell>{order.id}</TableCell>
-                                    <TableCell className="text-right">{order.user.name}</TableCell>
-                                    <TableCell className="text-right">{order.user.email}</TableCell>
-                                    <TableCell className="text-right">{numberformatter(order.total, 2)}</TableCell>
-                                    <TableCell className="text-right">
-                                        <Badge icon={deltaTypes[order.status].icon} color={deltaTypes[order.status].color}>
-                                            {statusTranslator(order.status)}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Button variant='light' icon={MoreHorizontalIcon} iconPosition='right' onClick={() => { showOrderDetails(order) }}>
-                                            Detalhes
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                    </TableBody>
-                </Table>
+                        <TableBody>
+                            {filteredOrders
+                                .map((order) => (
+                                    <TableRow key={order.id}>
+                                        <TableCell className="font-mono text-sm">{order.id}</TableCell>
+                                        <TableCell className="truncate max-w-32" title={order.user.name}>
+                                            {order.user.name || order.user.email}
+                                        </TableCell>
+                                        <TableCell className="text-right font-medium">
+                                            {numberformatter(order.total, 2)}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge 
+                                                icon={deltaTypes[order.status]?.icon || ClockIcon} 
+                                                color={deltaTypes[order.status]?.color || 'gray'}
+                                                size="sm"
+                                            >
+                                                {statusTranslator(order.status)}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                            <ReceiptLink orderId={order.id} />
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                            <Button 
+                                                variant='secondary' 
+                                                size="xs"
+                                                icon={ExternalLinkIcon}
+                                                onClick={() => { window.location.href = `/admin/order/${order.id}` }}
+                                            >
+                                                Detalhes
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                        </TableBody>
+                    </Table>
+                </div>
             </Card>
 
-            {selectedOrder && (
-                <Transition appear show={isOpen} as={Fragment}>
-                    <Dialog as="div" className="relative z-10" onClose={closeModal}>
-                        <Transition.Child
-                            as={Fragment}
-                            enter="ease-out duration-300"
-                            enterFrom="opacity-0"
-                            enterTo="opacity-100"
-                            leave="ease-in duration-200"
-                            leaveFrom="opacity-100"
-                            leaveTo="opacity-0"
-                        >
-                            <div className="fixed inset-0 bg-black/25" />
-                        </Transition.Child>
 
-                        <div className="fixed inset-0 overflow-y-auto">
-                            <div className="flex min-h-full items-center justify-center p-4 text-center">
-                                <Transition.Child
-                                    as={Fragment}
-                                    enter="ease-out duration-300"
-                                    enterFrom="opacity-0 scale-95"
-                                    enterTo="opacity-100 scale-100"
-                                    leave="ease-in duration-200"
-                                    leaveFrom="opacity-100 scale-100"
-                                    leaveTo="opacity-0 scale-95"
-                                >
-                                    <Dialog.Panel className="w-full max-w-xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-                                        <Dialog.Title
-                                            as="h3"
-                                            className="text-lg font-medium leading-6 text-gray-900"
-                                        >
-                                            Lista de Produtos e Mudança de Status
-                                        </Dialog.Title>
-                                        <form action={() => { updateStatus(selectedOrder.id, selectedStatus) }} className='flex gap-6 mt-6'>
-                                            <Select onValueChange={setSelectedStatus} placeholder='Selecione o status...'>
-                                                {Object.keys(deltaTypes).map((key, index) => (
-                                                    <SelectItem key={index} value={key}>
-                                                        {statusTranslator(key)}
-                                                    </SelectItem>
-                                                ))}
-                                            </Select>
-                                            <Button>
-                                                Salvar
-                                            </Button>
-                                        </form>
-
-                                        <Divider />
-
-                                        {selectedOrder.order_items.map((item, index) => (
-                                            <ProductList
-                                                key={index}
-                                                name={item.product.productItem_product.name}
-                                                size={item.product.size}
-                                                price={item.price}
-                                                quantity={item.quantity}
-                                                productId={item.product.product_id}
-                                            />
-                                        ))
-                                        }
-
-                                        <div className='flex gap-4 pt-4 justify-between'>
-                                            <div>
-                                                <p className='font-bold'>Data e Hora:</p>
-                                                <p> - {selectedOrder.createdAt?.toLocaleDateString()}</p>
-                                                <p> - {selectedOrder.createdAt?.toLocaleTimeString()}</p>
-                                            </div>
-
-                                            <div>
-                                                <p className='font-bold'>Total do Pedido:</p>
-                                                <p> - R${selectedOrder.total}</p>
-                                                <p> - {quantity} unidades</p>
-                                            </div>
-                                        </div>
-                                    </Dialog.Panel>
-                                </Transition.Child>
-                            </div>
-                        </div>
-                    </Dialog>
-                </Transition>
-            )}
         </main>
     );
 }

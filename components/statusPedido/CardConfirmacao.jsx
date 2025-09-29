@@ -9,6 +9,8 @@ import {
 	TableRow,
 } from '@tremor/react';
 import { QrCodePix } from 'qrcode-pix';
+import ReceiptUpload from '@/components/ui/receiptUpload';
+import { getReceiptUrl } from '@/utils/receiptStorage';
 
 export default function CardConfirmacao(props) {
 	const pedido = props.pedido;
@@ -19,6 +21,8 @@ export default function CardConfirmacao(props) {
 	const [qrBase64, setQrBase64] = useState('');
 	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [pixPayload, setPixPayload] = useState('');
+	const [receiptUrl, setReceiptUrl] = useState(null);
+	const [receiptExists, setReceiptExists] = useState(false);
 	const username = localStorage.getItem('name');
 
 
@@ -26,6 +30,25 @@ export default function CardConfirmacao(props) {
 		const storedPrice = localStorage.getItem('price');
 		if (storedPrice) setPrice(parseFloat(storedPrice));
 	}, []);
+
+	// Check if receipt already exists
+	useEffect(() => {
+		const checkReceipt = async () => {
+			try {
+				const url = await getReceiptUrl(pedido.id.toString());
+				if (url) {
+					setReceiptUrl(url);
+					setReceiptExists(true);
+				}
+			} catch (error) {
+				console.error('Error checking receipt:', error);
+			}
+		};
+		
+		if (pedido.id) {
+			checkReceipt();
+		}
+	}, [pedido.id]);
 
 	useEffect(() => {
         // Fetch PIX payload from the API
@@ -101,6 +124,7 @@ export default function CardConfirmacao(props) {
 					</div>
 				</React.Fragment>
 			) : pedido.status === 'payment-pending' ||
+			  pedido.status === 'pending_verification' ||
 			  pedido.status === 'processing' ||
 			  pedido.status === 'waiting' ? (
 				<React.Fragment>
@@ -152,28 +176,87 @@ export default function CardConfirmacao(props) {
 								</button>
 							</div>
 							<div className="flex justify-center mt-4">
-								<button
-									className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 w-48"
-									onClick={() => setIsModalOpen(true)} // Open modal on click
-								>
-									Enviar Comprovante
-								</button>
+								{receiptExists ? (
+									<div className="text-center">
+										<div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-2">
+											✅ Comprovante enviado! Aguardando verificação.
+										</div>
+										<button
+											className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 w-48"
+											onClick={() => setIsModalOpen(true)}
+										>
+											Ver/Alterar Comprovante
+										</button>
+									</div>
+								) : (
+									<button
+										className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 w-48"
+										onClick={() => setIsModalOpen(true)}
+									>
+										Enviar Comprovante
+									</button>
+								)}
 							</div>
 						</div>
 					</div>
 
 					{/* Modal */}
 					{isModalOpen && (
-						<div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-							<div className="bg-white p-6 rounded shadow-lg">
-								<p className="text-lg font-bold">Comprovante de pagamento</p>
-								<p>Envie o comprovante de pagamento para <b>luca.meireles@ufba.br</b>.</p>
+						<div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+							<div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4">
+								<div className="flex justify-between items-center mb-4">
+									<h3 className="text-lg font-bold">Comprovante de Pagamento</h3>
+									<button
+										className="text-gray-500 hover:text-gray-700"
+										onClick={() => setIsModalOpen(false)}
+									>
+										✕
+									</button>
+								</div>
+								
+								{receiptExists && receiptUrl ? (
+									<div className="mb-4">
+										<p className="text-green-700 mb-2 font-medium">
+											✅ Comprovante enviado com sucesso!
+										</p>
+										<div className="border rounded-lg p-2 bg-gray-50">
+											<img 
+												src={receiptUrl} 
+												alt="Comprovante de Pagamento" 
+												className="w-full max-w-xs mx-auto rounded"
+											/>
+										</div>
+										<p className="text-sm text-gray-600 mt-2">
+											Seu comprovante está sendo verificado. Você pode enviar um novo se necessário.
+										</p>
+									</div>
+								) : (
+									<div className="mb-4">
+										<p className="text-gray-700 mb-2">
+											Envie o comprovante de pagamento PIX para confirmar seu pedido.
+										</p>
+										<p className="text-sm text-gray-600">
+											Formatos aceitos: JPG, PNG, WebP (máx. 5MB)
+										</p>
+									</div>
+								)}
+
+								<ReceiptUpload 
+									orderId={pedido.id.toString()} 
+									onSuccess={() => {
+										setIsModalOpen(false);
+										// Refresh receipt status
+										setReceiptExists(true);
+										window.location.reload();
+									}}
+								/>
+								
 								<div className="flex justify-end mt-4">
 									<button
-										className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-										onClick={() => setIsModalOpen(false)} // Close modal on click
+										className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+										onClick={() => setIsModalOpen(false)}
 									>
-										Fechar
+										Cancelar
 									</button>
 								</div>
 							</div>

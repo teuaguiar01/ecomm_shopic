@@ -141,7 +141,7 @@ export default function PaymentPage() {
                                 <ol className="text-sm text-blue-800 space-y-1">
                                     <li>1. Faça o pagamento via PIX</li>
                                     <li>2. Envie o comprovante ao lado</li>
-                                    <li>3. Clique em "Finalizar Pedido"</li>
+                                    <li>3. Clique em &quot;Finalizar Pedido&quot;</li>
                                 </ol>
                             </div>
                         </div>
