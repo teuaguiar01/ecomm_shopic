@@ -33,7 +33,7 @@ export default function PaymentPage() {
 
     const params = {
         version: "01",
-        key: "86300844560", //or any PIX key
+        key: "85953866500", //or any PIX key
         name: username,
         city: "Salvador",
         transactionId: orderId || "202401",
