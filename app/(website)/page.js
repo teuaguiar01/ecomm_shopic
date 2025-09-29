@@ -73,7 +73,7 @@ export default function Home() {
 				const price = await Promise.all(products.map((product) => getPrice(product)));
 				setPrice(price);
 
-				const imageUrls = await Promise.all(products.map((product) => getRandomDefaultImage()));
+				const imageUrls = await Promise.all(products.map((product) =>getFirstImageFromFolder(product.id)));
 				setFirstImageUrl(imageUrls);
 			})
 		}

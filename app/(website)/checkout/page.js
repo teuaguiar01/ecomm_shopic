@@ -82,7 +82,9 @@ const CheckoutPage = () => {
     }
 
     const redirectToStatusPage2 = (orderId) => {
-        router.push(`/statusPedido/${orderId}`); 
+        // Save order ID for payment page
+        localStorage.setItem('orderId', orderId);
+        router.push('/payment'); 
     };
     async function tryCreateOrder() {
         let res = await createOrder({ user: session.user.id, billing_address: address, shipping_same_as_billing: !multipleAddresses, shipping_address: address2, gateway: { name: selectedOption }, cart: cartItems, total: cartTotal })
@@ -524,11 +526,10 @@ const CheckoutPage = () => {
                             disabled={!fullField}
                             onClick={async (e) => {
                                 e.preventDefault();
-                                await tryCreateOrder(); // Ensure the order creation completes
+                                // Save payment data before creating order
                                 localStorage.setItem('price', formattedCartTotal);
                                 localStorage.setItem('name', address.name);
-                                // router.push('/payment'); // Redirect to payment page
-                                // await handleRedirectToPayment();
+                                await tryCreateOrder(); // This will redirect to payment page
                             }}
                         >
                             Fazer Pedido

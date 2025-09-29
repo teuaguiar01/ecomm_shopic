@@ -16,7 +16,7 @@
     "@mercadopago/sdk-react": "^0.0.23",
     "@next-auth/prisma-adapter": "^1.0.7",
     "@openpix/react": "^0.0.2",
-    "@prisma/client": "^5.3.1",
+    "@prisma/client": "^6.16.2",
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-switch": "^1.0.3",
     "@tremor/react": "^3.9.2",
@@ -64,6 +64,6 @@
   "devDependencies": {
     "cross-env": "^7.0.3",
     "file-loader": "^6.2.0",
-    "prisma": "^5.3.1"
+    "prisma": "^6.16.2"
   }
 }

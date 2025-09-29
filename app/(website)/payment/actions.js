@@ -1,6 +1,8 @@
 
 "use server";
 import { v4 as uuidv4 } from 'uuid';
+import { receiptExists } from '@/utils/receiptStorage';
+import { prisma } from '@/utils/prisma';
 
 export async function GeneratePayment(price, email) {
     try {
@@ -52,4 +54,132 @@ export async function handler() {
         payload: copyAndPaste,
         data,
     };
+}
+
+/**
+ * Complete payment process with receipt validation
+ * @param {string} orderId - The order ID
+ * @returns {Promise<{success: boolean, error?: string}>}
+ */
+export async function completePaymentWithReceipt(orderId) {
+    try {
+        // Validate input
+        if (!orderId) {
+            return { success: false, error: 'ID do pedido é obrigatório' };
+        }
+
+        // Check if order exists
+        const order = await prisma.order.findUnique({
+            where: { id: parseInt(orderId) }
+        });
+
+        if (!order) {
+            return { success: false, error: 'Pedido não encontrado' };
+        }
+
+        // Check if receipt exists in Firebase Storage
+        const hasReceipt = await receiptExists(orderId);
+        
+        if (!hasReceipt) {
+            return { success: false, error: 'Comprovante de pagamento não encontrado. Por favor, envie o comprovante.' };
+        }
+
+        // Update order status to indicate payment is pending verification
+        await prisma.order.update({
+            where: { id: parseInt(orderId) },
+            data: { 
+                status: 'pending_verification'
+            }
+        });
+
+        return { success: true };
+
+    } catch (error) {
+        console.error('Error completing payment with receipt:', error);
+        return { 
+            success: false, 
+            error: 'Erro interno do servidor. Tente novamente.' 
+        };
+    }
+}
+
+/**
+ * Validate receipt upload completion for an order
+ * @param {string} orderId - The order ID
+ * @returns {Promise<{valid: boolean, error?: string}>}
+ */
+export async function validateReceiptUpload(orderId) {
+    try {
+        if (!orderId) {
+            return { valid: false, error: 'ID do pedido é obrigatório' };
+        }
+
+        // Check if order exists
+        const order = await prisma.order.findUnique({
+            where: { id: parseInt(orderId) }
+        });
+
+        if (!order) {
+            return { valid: false, error: 'Pedido não encontrado' };
+        }
+
+        // Check if receipt exists in Firebase Storage
+        const hasReceipt = await receiptExists(orderId);
+        
+        return { 
+            valid: hasReceipt,
+            error: hasReceipt ? null : 'Comprovante não encontrado'
+        };
+
+    } catch (error) {
+        console.error('Error validating receipt upload:', error);
+        return { 
+            valid: false, 
+            error: 'Erro ao validar comprovante' 
+        };
+    }
+}
+
+/**
+ * Get order details for payment page
+ * @param {string} orderId - The order ID
+ * @returns {Promise<{order?: object, error?: string}>}
+ */
+export async function getOrderForPayment(orderId) {
+    try {
+        if (!orderId) {
+            return { error: 'ID do pedido é obrigatório' };
+        }
+
+        const order = await prisma.order.findUnique({
+            where: { id: parseInt(orderId) },
+            include: {
+                user: {
+                    select: {
+                        name: true,
+                        email: true
+                    }
+                },
+                order_items: {
+                    include: {
+                        product: {
+                            select: {
+                                price: true
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        if (!order) {
+            return { error: 'Pedido não encontrado' };
+        }
+
+        return { order };
+
+    } catch (error) {
+        console.error('Error getting order for payment:', error);
+        return { error: 'Erro ao buscar pedido' };
+    }
 }

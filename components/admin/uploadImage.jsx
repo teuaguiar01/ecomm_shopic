@@ -60,6 +60,8 @@ const UploadImagePage = ({ firstProductId, maxImages = 3 }) => {
   
   const uploadImages = async () => {
     try {
+      console.log("Iniciando o upload das imagens...");
+
       const folderRef = ref(storage, `${firstProductId}`);
 
       const images = await listAll(folderRef);

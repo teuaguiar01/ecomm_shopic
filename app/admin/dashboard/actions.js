@@ -24,18 +24,44 @@ async function queryAllOrders() {
 async function updateStatus(orderId, orderStatus) {
     const session = await getServerSession()
     if (!session || !session.user.role || session.user.role != "admin") {
-        return false
+        throw new Error("Unauthorized: Admin access required")
     }
-    await prisma.order.update({
-        where: {
-            id: parseInt(orderId)
-        },
-        data: {
-            status: orderStatus,
-        },
-    });
 
-    revalidatePath('/admin/')
+    // Validate status
+    const validStatuses = [
+        "payment-pending",
+        "pending-verification",
+        "pending_verification",
+        "processing",
+        "completed",
+        "shipped",
+        "delivered",
+        "canceled",
+        "waiting"
+    ];
+
+    if (!validStatuses.includes(orderStatus)) {
+        throw new Error("Invalid status provided")
+    }
+
+    try {
+        const orderIdInt = parseInt(orderId);
+        
+        await prisma.order.update({
+            where: {
+                id: orderIdInt
+            },
+            data: {
+                status: orderStatus,
+            },
+        });
+
+        console.log(`Dashboard: Order ${orderIdInt} status updated to "${orderStatus}"`);
+        revalidatePath('/admin/')
+    } catch (error) {
+        console.error("Dashboard: Error updating order status:", error);
+        throw new Error(`Failed to update order status: ${error.message}`);
+    }
 }
 
 export { queryAllOrders, updateStatus }
