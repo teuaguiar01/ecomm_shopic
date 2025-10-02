@@ -1,6 +1,6 @@
 "use client"
 import React, { useEffect, useState, useTransition } from 'react';
-import { queryProductById, queryAllProductsItem, queryAllCategories, updateProductItem } from "../../../actions"
+import { queryProductById, queryAllProductsItem, queryAllCategories, updateProductItem, deleteProduct } from "../../../actions"
 import ReturnComponent from '@/components/ui/insertProduct';
 import { ref, getDownloadURL, listAll, deleteObject} from "@firebase/storage";
 import { storage } from "@/firebase";

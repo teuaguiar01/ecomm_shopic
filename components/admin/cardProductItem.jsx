@@ -26,7 +26,18 @@ export default function CardProductItem(props) {
       </Carousel>
 
       <div className="p-6 bg-white rounded-b lg:rounded-b-none lg:rounded-r flex flex-col justify-between leading-normal">
-        <h3 className='text-2xl font-bold border-b-zinc-600 border-b text-sky-900'>Produto</h3>
+        <div className="flex justify-between items-start">
+          <h3 className='text-2xl font-bold border-b-zinc-600 border-b text-sky-900'>Produto</h3>
+          {props.onDeleteProduct && (
+            <Button
+              onClick={props.onDeleteProduct}
+              className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-md"
+              title="Deletar Produto"
+            >
+              <Trash2Icon size={16} />
+            </Button>
+          )}
+        </div>
         {props.rating && (
           <div className="flex items-center mt-2 text-black">
             <RenderStars rating={props.rating} />

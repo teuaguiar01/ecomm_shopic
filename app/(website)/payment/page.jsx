@@ -5,23 +5,26 @@ import { useRouter } from 'next/navigation';
 import { QrCodePix } from "qrcode-pix";
 import ReceiptUpload from '@/components/ui/receiptUpload';
 import { completePaymentWithReceipt } from './actions';
-import { toast } from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function PaymentPage() {
     const [price, setPrice] = useState(0);
     const [qrBase64, setQrBase64] = useState("");
+    const [pixCode, setPixCode] = useState("");
     const [orderId, setOrderId] = useState(null);
     const [receiptUploaded, setReceiptUploaded] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [copySuccess, setCopySuccess] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
         const storedPrice = localStorage.getItem('price');
         const storedOrderId = localStorage.getItem('orderId');
-        
+
         if (storedPrice) setPrice(parseFloat(storedPrice));
         if (storedOrderId) setOrderId(storedOrderId);
-        
+
         // If no order ID, redirect back to checkout
         if (!storedOrderId) {
             toast.error('Pedido não encontrado. Refaça o checkout.');
@@ -29,22 +32,42 @@ export default function PaymentPage() {
         }
     }, [router]);
 
-    const username = localStorage.getItem('name');
+    // Gerar QR PIX quando os dados estiverem prontos
+    useEffect(() => {
+        if (price > 0 && orderId) {
+            const username = localStorage.getItem('name');
 
-    const params = {
-        version: "01",
-        key: "85953866500", //or any PIX key
-        name: username,
-        city: "Salvador",
-        transactionId: orderId || "202401",
-        message: "SHOPIC",
-        value: price
-    };
+            const params = {
+                version: "01",
+                key: "85953866500", //or any PIX key
+                name: username,
+                city: "Salvador",
+                transactionId: orderId,
+                message: "SHOPIC",
+                value: price
+            };
+
+            showQrPix(params);
+        }
+    }, [price, orderId]);
 
     function showQrPix(context) {
         const pixQR = QrCodePix(context);
         pixQR.base64().then(setQrBase64);
+        // Obter o código PIX em texto
+        setPixCode(pixQR.payload());
     }
+
+    const copyPixCode = async () => {
+        try {
+            await navigator.clipboard.writeText(pixCode);
+            setCopySuccess(true);
+            toast.success('Código PIX copiado!');
+            setTimeout(() => setCopySuccess(false), 2000);
+        } catch (err) {
+            toast.error('Erro ao copiar código PIX');
+        }
+    };
 
     const handleReceiptUploadSuccess = () => {
         setReceiptUploaded(true);
@@ -70,15 +93,15 @@ export default function PaymentPage() {
 
         try {
             const result = await completePaymentWithReceipt(orderId);
-            
+
             if (result.success) {
                 toast.success('Pagamento confirmado! Redirecionando...');
-                
+
                 // Clear localStorage
                 localStorage.removeItem('price');
                 localStorage.removeItem('orderId');
                 localStorage.removeItem('name');
-                
+
                 // Redirect to order status page
                 setTimeout(() => {
                     router.push(`/statusPedido/${orderId}`);
@@ -111,31 +134,61 @@ export default function PaymentPage() {
                     <h1 className="text-2xl font-bold text-center mb-6">
                         Pagamento - Pedido #{orderId}
                     </h1>
-                    
+
                     <div className="grid md:grid-cols-2 gap-8">
                         {/* PIX Payment Section */}
                         <div className="space-y-4">
                             <h2 className="text-xl font-semibold">Pague R$ {price.toFixed(2)} via Pix</h2>
-                            
+
                             <div className="bg-gray-50 p-4 rounded-lg">
                                 <p className="text-sm text-gray-600 mb-4">
                                     Escaneie o código QR ou copie o código PIX:
                                 </p>
-                                
-                                {showQrPix(params)}
-                                <div className="flex justify-center">
+
+                                <div className="flex justify-center mb-4">
                                     {qrBase64 ? (
-                                        <img 
-                                            src={qrBase64} 
-                                            alt="QR PIX" 
+                                        <img
+                                            src={qrBase64}
+                                            alt="QR PIX"
                                             className="max-w-xs border rounded"
                                         />
                                     ) : (
                                         <div className="text-red-500 p-4">PIX INVÁLIDO</div>
                                     )}
                                 </div>
+
+                                {/* Código PIX em texto */}
+                                {pixCode && (
+                                    <div className="mt-4">
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            Código PIX (Copia e Cola):
+                                        </label>
+                                        <div className="flex gap-2">
+                                            <textarea
+                                                value={pixCode}
+                                                readOnly
+                                                className="flex-1 p-3 border border-gray-300 rounded-md text-sm font-mono bg-gray-50 resize-none"
+                                                rows="3"
+                                                placeholder="Código PIX será gerado aqui..."
+                                            />
+                                            <button
+                                                onClick={copyPixCode}
+                                                className={`px-4 py-2 rounded-md font-medium transition-colors ${copySuccess
+                                                    ? 'bg-green-500 text-white'
+                                                    : 'bg-blue-500 hover:bg-blue-600 text-white'
+                                                    }`}
+                                                title="Copiar código PIX"
+                                            >
+                                                {copySuccess ? '✓ Copiado!' : 'Copiar'}
+                                            </button>
+                                        </div>
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Cole este código no seu app bancário na opção PIX → Copia e Cola
+                                        </p>
+                                    </div>
+                                )}
                             </div>
-                            
+
                             <div className="bg-blue-50 p-4 rounded-lg">
                                 <h3 className="font-medium text-blue-900 mb-2">Instruções:</h3>
                                 <ol className="text-sm text-blue-800 space-y-1">
@@ -149,21 +202,21 @@ export default function PaymentPage() {
                         {/* Receipt Upload Section */}
                         <div className="space-y-4">
                             <h2 className="text-xl font-semibold">Enviar Comprovante</h2>
-                            
+
                             <div className="bg-yellow-50 p-4 rounded-lg mb-4">
                                 <p className="text-sm text-yellow-800">
-                                    <strong>Importante:</strong> Após realizar o pagamento PIX, 
+                                    <strong>Importante:</strong> Após realizar o pagamento PIX,
                                     envie o comprovante para confirmar seu pedido.
                                 </p>
                             </div>
-                            
+
                             <ReceiptUpload
                                 orderId={orderId}
                                 onUploadSuccess={handleReceiptUploadSuccess}
                                 onUploadError={handleReceiptUploadError}
                                 required={true}
                             />
-                            
+
                             {receiptUploaded && (
                                 <div className="mt-6">
                                     <button
@@ -171,8 +224,8 @@ export default function PaymentPage() {
                                         disabled={isProcessing}
                                         className={`
                                             w-full py-3 px-6 rounded-lg font-medium transition-colors
-                                            ${isProcessing 
-                                                ? 'bg-gray-400 cursor-not-allowed' 
+                                            ${isProcessing
+                                                ? 'bg-gray-400 cursor-not-allowed'
                                                 : 'bg-green-600 hover:bg-green-700'
                                             } text-white
                                         `}
@@ -183,7 +236,7 @@ export default function PaymentPage() {
                             )}
                         </div>
                     </div>
-                    
+
                     {!receiptUploaded && (
                         <div className="mt-8 text-center">
                             <p className="text-gray-600 text-sm">
@@ -193,6 +246,7 @@ export default function PaymentPage() {
                     )}
                 </div>
             </div>
+            <ToastContainer position="top-right" autoClose={3000} />
         </div>
     );
 }

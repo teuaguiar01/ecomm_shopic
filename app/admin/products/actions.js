@@ -173,6 +173,9 @@ async function queryAllProducts() {
 }
 
 async function queryAllCategories() {
+	// Garantir que a categoria "Inativos" existe
+	await getOrCreateInactiveCategory()
+	
 	return await prisma.productCategory.findMany({
 		select: {
 			id: true,
@@ -214,6 +217,102 @@ async function sharpImage(file) {
 	}
   }
 
+async function getOrCreateInactiveCategory() {
+	// Verificar se a categoria "Inativos" já existe
+	let inactiveCategory = await prisma.productCategory.findFirst({
+		where: {
+			name: "Inativos"
+		}
+	})
+
+	// Se não existir, criar a categoria
+	if (!inactiveCategory) {
+		inactiveCategory = await prisma.productCategory.create({
+			data: {
+				name: "Inativos"
+			}
+		})
+	}
+
+	return inactiveCategory
+}
+
+async function deleteProduct(productId) {
+	const session = await getServerSession()
+    if (!session || !session.user.role || session.user.role != "admin") {
+        return { success: false, message: "Não autorizado" }
+    }
+
+	try {
+		// Verificar se existem pedidos associados aos itens deste produto
+		const productItems = await prisma.productItem.findMany({
+			where: {
+				product_id: parseInt(productId)
+			},
+			select: {
+				sku: true
+			}
+		})
+
+		const skus = productItems.map(item => item.sku)
+		let hasOrders = false
+		
+		if (skus.length > 0) {
+			const orderItems = await prisma.orderItem.findMany({
+				where: {
+					sku: {
+						in: skus
+					}
+				}
+			})
+
+			hasOrders = orderItems.length > 0
+		}
+
+		if (hasOrders) {
+			// Se há pedidos associados, mover para categoria "Inativos"
+			const inactiveCategory = await getOrCreateInactiveCategory()
+			
+			await prisma.product.update({
+				where: {
+					id: parseInt(productId)
+				},
+				data: {
+					product_categories_id: inactiveCategory.id
+				}
+			})
+
+			return { 
+				success: true, 
+				message: "Produto movido para categoria 'Inativos' pois possui pedidos associados. Ele não aparecerá mais na loja." 
+			}
+		} else {
+			// Se não há pedidos associados, pode deletar completamente
+			// Primeiro, deletar todos os itens do produto
+			await prisma.productItem.deleteMany({
+				where: {
+					product_id: parseInt(productId)
+				}
+			})
+
+			// Depois, deletar o produto
+			await prisma.product.delete({
+				where: {
+					id: parseInt(productId)
+				}
+			})
+
+			return { success: true, message: "Produto deletado com sucesso" }
+		}
+	} catch (error) {
+		console.error("Erro ao processar produto:", error)
+		if (error.code === 'P2003') {
+			return { success: false, message: "Não é possível deletar este produto pois existem pedidos associados a ele." }
+		}
+		return { success: false, message: "Erro ao processar produto" }
+	}
+}
+
 export { 
 	createProduct,
 	createProductItem, 
@@ -223,6 +322,8 @@ export {
 	queryProductCategory, 
 	updateProductItem, 
 	sharpImage, 
-	queryAllCategories
+	queryAllCategories,
+	deleteProduct,
+	getOrCreateInactiveCategory
 }
 

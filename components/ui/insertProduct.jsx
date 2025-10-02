@@ -43,11 +43,42 @@ const ReturnComponent = ({ dados }) => {
         toast.error("Falha ao atualizar produto")
       }
     }
+
+    const handleDeleteProduct = async () => {
+      if (!window.confirm("Tem certeza que deseja deletar este produto? Esta ação não pode ser desfeita.")) {
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/delete-product', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ productId: dados.firstProduct.id })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          toast.success("Produto deletado com sucesso");
+          setTimeout(() => {
+            window.location.href = '/admin/products';
+          }, 1500);
+        } else {
+          toast.error(result.error || "Erro ao deletar produto");
+        }
+      } catch (error) {
+        console.error("Erro ao deletar produto:", error);
+        toast.error("Erro ao deletar produto");
+      }
+    };
   
   const { firstProduct, fieldsProductupdate, fieldsItem, headers, productsItem, action, categorie , imageURLs, handleDeleteImage} = dados;
   
   return (
     <div className="py-3 px-2 self-center grow flex flex-col items-center gap-4 text-white">
+      <ToastContainer position="top-right" autoClose={3000} />
 
     {/* Primeira linha */}
     <div className="flex flex-col md:flex-row gap-4 w-full">
@@ -63,6 +94,7 @@ const ReturnComponent = ({ dados }) => {
             rating={firstProduct.rating}
             categorie={categorie}
             handleDelete={handleDeleteImage}
+            onDeleteProduct={handleDeleteProduct}
             />
       </div>
 
