@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { QrCodePix } from "qrcode-pix";
+import { createStaticPix } from 'pix-utils';
+import QRCode from 'qrcode';
 import ReceiptUpload from '@/components/ui/receiptUpload';
 import { completePaymentWithReceipt } from './actions';
 import { toast, ToastContainer } from 'react-toastify';
@@ -35,28 +36,58 @@ export default function PaymentPage() {
     // Gerar QR PIX quando os dados estiverem prontos
     useEffect(() => {
         if (price > 0 && orderId) {
-            const username = localStorage.getItem('name');
-
-            const params = {
-                version: "01",
-                key: "85953866500", //or any PIX key
-                name: username,
-                city: "Salvador",
-                transactionId: orderId,
-                message: "SHOPIC",
-                value: price
-            };
-
-            showQrPix(params);
+            const username = localStorage.getItem('name') || 'Cliente';
+            generatePixCode(username);
         }
     }, [price, orderId]);
 
-    function showQrPix(context) {
-        const pixQR = QrCodePix(context);
-        pixQR.base64().then(setQrBase64);
-        // Obter o código PIX em texto
-        setPixCode(pixQR.payload());
-    }
+    const generatePixCode = async (username) => {
+        try {
+            // Criar o código PIX usando pix-utils
+            const pixData = createStaticPix({
+                merchantName: username || 'SHOPIC',
+                merchantCity: 'Salvador',
+                pixKey: '85953866500', // Chave PIX
+                infoAdicional: `Pedido ${orderId}`,
+                transactionAmount: price
+            });
+
+            console.log('Dados PIX gerados:', pixData);
+
+            // Usar o método toBRCode() para obter o código PIX correto
+            const pixCodeString = pixData.toBRCode();
+
+            console.log('Código PIX string:', pixCodeString);
+
+            // Verificar se o código PIX string foi gerado corretamente
+            if (!pixCodeString || typeof pixCodeString !== 'string') {
+                throw new Error('Não foi possível gerar o código PIX');
+            }
+
+            // Definir o código PIX em texto
+            setPixCode(pixCodeString);
+
+            // Gerar QR Code a partir do código PIX
+            const qrCodeDataURL = await QRCode.toDataURL(pixCodeString, {
+                width: 300,
+                margin: 2,
+                color: {
+                    dark: '#000000',
+                    light: '#FFFFFF'
+                },
+                errorCorrectionLevel: 'M'
+            });
+
+            setQrBase64(qrCodeDataURL);
+        } catch (error) {
+            console.error('Erro ao gerar código PIX:', error);
+            toast.error('Erro ao gerar código PIX: ' + error.message);
+            
+            // Fallback: mostrar mensagem de erro
+            setPixCode('Erro ao gerar código PIX');
+            setQrBase64('');
+        }
+    };
 
     const copyPixCode = async () => {
         try {

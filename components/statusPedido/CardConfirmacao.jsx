@@ -8,7 +8,8 @@ import {
 	TableHeaderCell,
 	TableRow,
 } from '@tremor/react';
-import { QrCodePix } from 'qrcode-pix';
+import { createStaticPix } from 'pix-utils';
+import QRCode from 'qrcode';
 import ReceiptUpload from '@/components/ui/receiptUpload';
 import { getReceiptUrl } from '@/utils/receiptStorage';
 
@@ -44,63 +45,61 @@ export default function CardConfirmacao(props) {
 				console.error('Error checking receipt:', error);
 			}
 		};
-		
+
 		if (pedido.id) {
 			checkReceipt();
 		}
 	}, [pedido.id]);
 
 	useEffect(() => {
-        // Fetch PIX payload from the API
-        async function fetchPixPayload() {
-            try {
-                const response = await fetch('/api/generatePix', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        name: 'username' || 'Default Name',
-                        key: '86300844560',
-                        amount: price,
-                        city: 'Salvador',
-                        id: '202401',
-                    }),
-                });
-                const data = await response.json();
-                if (response.ok) {
-                    setPixPayload(data.payload.payload);
-                } else {
-                    console.error(data.error);
-                }
-            } catch (error) {
-                console.error('Failed to fetch PIX payload:', error);
-            }
-        }
+		if (price > 0 && username) {
+			generatePixCode();
+		}
+	}, [price, username]);
 
-        if (price > 0) {
-            fetchPixPayload();
-        }
-    }, [price, username]);
-	
-	const params = {
-		version: '01',
-		key: '86300844560', //or any PIX key
-		name: username,
-		city: 'Salvador',
-		transactionId: '202401',
-		message: 'SHOPIC',
-		value: price,
+	const generatePixCode = async () => {
+		try {
+			// Criar o código PIX usando pix-utils
+			const pixData = createStaticPix({
+				merchantName: username || 'SHOPIC',
+				merchantCity: 'Salvador',
+				pixKey: '86300844560', // Chave PIX
+				infoAdicional: `Pedido ${pedido.id}`,
+				transactionAmount: price
+			});
+
+			const pixCodeString = pixData.toBRCode();
+
+			if (!pixCodeString || typeof pixCodeString !== 'string') {
+				throw new Error('Não foi possível gerar o código PIX');
+			}
+
+			// Definir o código PIX em texto
+			setPixPayload(pixCodeString);
+
+			// Gerar QR Code a partir do código PIX
+			const qrCodeDataURL = await QRCode.toDataURL(pixCodeString, {
+				width: 300,
+				margin: 2,
+				color: {
+					dark: '#000000',
+					light: '#FFFFFF'
+				},
+				errorCorrectionLevel: 'M'
+			});
+
+			setQrBase64(qrCodeDataURL);
+		} catch (error) {
+			setPixPayload('Erro ao gerar código PIX');
+			setQrBase64('');
+		}
 	};
-
-	function showQrPix(context) {
-		const pixQR = QrCodePix(context);
-		pixQR.base64().then(setQrBase64);
-	}
 
 	return (
 		<div className="bg-white flex flex-col items-center shadow-lg h-4/5 w-full py-5">
 			{pedido.status === 'completed' ||
-			pedido.status === 'shipped' ||
-			pedido.status === 'delivered' ? (
+				pedido.status === 'shipped' ||
+				pedido.status === 'delivered' ? (
 				<React.Fragment>
 					<div className="text-start font-bold text-2xl mb-4">
 						<h2>Pedido Confirmado</h2>
@@ -124,9 +123,9 @@ export default function CardConfirmacao(props) {
 					</div>
 				</React.Fragment>
 			) : pedido.status === 'payment-pending' ||
-			  pedido.status === 'pending_verification' ||
-			  pedido.status === 'processing' ||
-			  pedido.status === 'waiting' ? (
+				pedido.status === 'pending_verification' ||
+				pedido.status === 'processing' ||
+				pedido.status === 'waiting' ? (
 				<React.Fragment>
 					<div className="text-start font-bold text-2xl mb-4">
 						<h2>Pedido Confirmado</h2>
@@ -153,7 +152,6 @@ export default function CardConfirmacao(props) {
 						</p>
 						<div className="p-4 h-auto md:h-2/6 w-auto md:w-full rounded-sm justify-center">
 							<div className="flex justify-center text-white">
-								{showQrPix(params)}
 								{qrBase64 ? (
 									<img src={qrBase64} alt="QR PIX" />
 								) : (
@@ -165,8 +163,8 @@ export default function CardConfirmacao(props) {
 									className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 w-48"
 									onClick={() => {
 										if (pixPayload) {
-											navigator.clipboard.writeText(pixPayload); // Copy only the payload field
-											alert('Código PIX copiado com sucesso!'); // Optional: Show confirmation
+											navigator.clipboard.writeText(pixPayload);
+											alert('Código PIX copiado com sucesso!');
 										} else {
 											alert('Erro: Código PIX não disponível.');
 										}
@@ -213,16 +211,16 @@ export default function CardConfirmacao(props) {
 										✕
 									</button>
 								</div>
-								
+
 								{receiptExists && receiptUrl ? (
 									<div className="mb-4">
 										<p className="text-green-700 mb-2 font-medium">
 											✅ Comprovante enviado com sucesso!
 										</p>
 										<div className="border rounded-lg p-2 bg-gray-50">
-											<img 
-												src={receiptUrl} 
-												alt="Comprovante de Pagamento" 
+											<img
+												src={receiptUrl}
+												alt="Comprovante de Pagamento"
 												className="w-full max-w-xs mx-auto rounded"
 											/>
 										</div>
@@ -241,8 +239,8 @@ export default function CardConfirmacao(props) {
 									</div>
 								)}
 
-								<ReceiptUpload 
-									orderId={pedido.id.toString()} 
+								<ReceiptUpload
+									orderId={pedido.id.toString()}
 									onSuccess={() => {
 										setIsModalOpen(false);
 										// Refresh receipt status
@@ -250,7 +248,7 @@ export default function CardConfirmacao(props) {
 										window.location.reload();
 									}}
 								/>
-								
+
 								<div className="flex justify-end mt-4">
 									<button
 										className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
