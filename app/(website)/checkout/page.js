@@ -20,12 +20,26 @@ const CheckoutPage = () => {
 
 
     const checkFields = () => {
-        const fields = ['zipCode', 'city', 'state', 'country', 'neighborhood', 'complement', 'number', 'street', 'full_name']; 
-        const allFull = fields.every(field => {
+        // Campos obrigatórios do endereço de cobrança
+        const billingFields = ['zipCode', 'city', 'state', 'country', 'neighborhood', 'complement', 'number', 'street', 'full_name']; 
+        
+        const billingValid = billingFields.every(field => {
             const element = document.getElementById(field);
             return element && (element.value.trim() !== '' || element.defaultValue.trim() !== '');
         });
-        setFullField(allFull);
+
+        // Se há endereços múltiplos, verificar também os campos de entrega
+        let shippingValid = true;
+        if (multipleAddresses) {
+            const shippingFields = ['shipping_zipCode', 'shipping_city', 'shipping_state', 'shipping_country', 'shipping_neighborhood', 'shipping_complement', 'shipping_number', 'shipping_street', 'shipping_full_name'];
+            shippingValid = shippingFields.every(field => {
+                const element = document.getElementById(field);
+                return element && (element.value.trim() !== '' || element.defaultValue.trim() !== '');
+            });
+        }
+
+        const allValid = billingValid && shippingValid;
+        setFullField(allValid);
     };
 
     const handleChange = () => {
@@ -132,6 +146,11 @@ const CheckoutPage = () => {
         }
     }, [session])
 
+    // Revalidar quando multipleAddresses mudar
+    useEffect(() => {
+        setTimeout(() => checkFields(), 100);
+    }, [multipleAddresses])
+
     if (status === "unauthenticated") {
         return (
             <div className='flex my-10'>
@@ -193,6 +212,7 @@ const CheckoutPage = () => {
                                             className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:border-blue-300 sm:text-sm"
                                             defaultValue={address.street}
                                             form="order"
+                                            onChange={handleChange}
                                         />
                                     </div>
 
@@ -207,6 +227,7 @@ const CheckoutPage = () => {
                                             className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:border-blue-300 sm:text-sm"
                                             defaultValue={address.number}
                                             form="order"
+                                            onChange={handleChange}
                                         />
                                     </div>
 
@@ -221,6 +242,7 @@ const CheckoutPage = () => {
                                             className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:border-blue-300 sm:text-sm"
                                             defaultValue={address.complement}
                                             form="order"
+                                            onChange={handleChange}
                                         />
                                     </div>
 
@@ -235,6 +257,7 @@ const CheckoutPage = () => {
                                             className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:border-blue-300 sm:text-sm"
                                             defaultValue={address.neighborhood}
                                             form="order"
+                                            onChange={handleChange}
                                         />
                                     </div>
 
@@ -249,6 +272,7 @@ const CheckoutPage = () => {
                                             className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:border-blue-300 sm:text-sm"
                                             defaultValue={address.city}
                                             form="order"
+                                            onChange={handleChange}
                                         />
                                     </div>
 
@@ -263,6 +287,7 @@ const CheckoutPage = () => {
                                             className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:border-blue-300 sm:text-sm"
                                             defaultValue={address.state}
                                             form="order"
+                                            onChange={handleChange}
                                         />
                                     </div>
 
@@ -277,6 +302,7 @@ const CheckoutPage = () => {
                                             className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:border-blue-300 sm:text-sm"
                                             defaultValue={address.country}
                                             form="order"
+                                            onChange={handleChange}
                                         />
                                     </div>
 
@@ -320,28 +346,28 @@ const CheckoutPage = () => {
 
                                 <div>
                                     <div className="my-2 block">
-                                        <label htmlFor="street" className="block text-sm font-medium text-gray-700">
+                                        <label htmlFor="shipping_full_name" className="block text-sm font-medium text-gray-700">
                                             Nome Completo
                                         </label>
                                         <input
                                             type="text"
-                                            id="street"
-                                            name="name"
+                                            id="shipping_full_name"
+                                            name="shipping_name"
                                             className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:border-blue-300 sm:text-sm"
-                                            defaultValue={address.name}
+                                            defaultValue={address2.name}
                                             form="order"
                                             onChange={handleChange}
                                         />
                                     </div>
 
                                     <div className="my-2 block">
-                                        <label htmlFor="street" className="block text-sm font-medium text-gray-700">
+                                        <label htmlFor="shipping_street" className="block text-sm font-medium text-gray-700">
                                             Logradouro
                                         </label>
                                         <input
                                             type="text"
-                                            id="street"
-                                            name="street"
+                                            id="shipping_street"
+                                            name="shipping_street"
                                             className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:border-blue-300 sm:text-sm"
                                             defaultValue={address2.street}
                                             form="order"
@@ -350,13 +376,13 @@ const CheckoutPage = () => {
                                     </div>
 
                                     <div className="my-2 block">
-                                        <label htmlFor="number" className="block text-sm font-medium text-gray-700">
+                                        <label htmlFor="shipping_number" className="block text-sm font-medium text-gray-700">
                                             Número
                                         </label>
                                         <input
                                             type="text"
-                                            id="number"
-                                            name="number"
+                                            id="shipping_number"
+                                            name="shipping_number"
                                             className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:border-blue-300 sm:text-sm"
                                             defaultValue={address2.number}
                                             form="order"
@@ -365,13 +391,13 @@ const CheckoutPage = () => {
                                     </div>
 
                                     <div className="my-2 block">
-                                        <label htmlFor="complement" className="block text-sm font-medium text-gray-700">
+                                        <label htmlFor="shipping_complement" className="block text-sm font-medium text-gray-700">
                                             Complemento
                                         </label>
                                         <input
                                             type="text"
-                                            id="complement"
-                                            name="complement"
+                                            id="shipping_complement"
+                                            name="shipping_complement"
                                             className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:border-blue-300 sm:text-sm"
                                             defaultValue={address2.complement}
                                             form="order"
@@ -380,13 +406,13 @@ const CheckoutPage = () => {
                                     </div>
 
                                     <div className="my-2 block">
-                                        <label htmlFor="neighborhood" className="block text-sm font-medium text-gray-700">
+                                        <label htmlFor="shipping_neighborhood" className="block text-sm font-medium text-gray-700">
                                             Bairro
                                         </label>
                                         <input
                                             type="text"
-                                            id="neighborhood"
-                                            name="neighborhood"
+                                            id="shipping_neighborhood"
+                                            name="shipping_neighborhood"
                                             className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:border-blue-300 sm:text-sm"
                                             defaultValue={address2.neighborhood}
                                             form="order"
@@ -395,13 +421,13 @@ const CheckoutPage = () => {
                                     </div>
 
                                     <div className="my-2 block">
-                                        <label htmlFor="city" className="block text-sm font-medium text-gray-700">
+                                        <label htmlFor="shipping_city" className="block text-sm font-medium text-gray-700">
                                             Cidade
                                         </label>
                                         <input
                                             type="text"
-                                            id="city"
-                                            name="city"
+                                            id="shipping_city"
+                                            name="shipping_city"
                                             className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:border-blue-300 sm:text-sm"
                                             defaultValue={address2.city}
                                             form="order"
@@ -410,44 +436,47 @@ const CheckoutPage = () => {
                                     </div>
 
                                     <div className="my-2 block">
-                                        <label htmlFor="state" className="block text-sm font-medium text-gray-700">
+                                        <label htmlFor="shipping_state" className="block text-sm font-medium text-gray-700">
                                             Estado
                                         </label>
                                         <input
                                             type="text"
-                                            id="state"
-                                            name="state"
+                                            id="shipping_state"
+                                            name="shipping_state"
                                             className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:border-blue-300 sm:text-sm"
                                             defaultValue={address2.state}
                                             form="order"
+                                            onChange={handleChange}
                                         />
                                     </div>
 
                                     <div className="my-2 block">
-                                        <label htmlFor="country" className="block text-sm font-medium text-gray-700">
+                                        <label htmlFor="shipping_country" className="block text-sm font-medium text-gray-700">
                                             País
                                         </label>
                                         <input
                                             type="text"
-                                            id="country"
-                                            name="country"
+                                            id="shipping_country"
+                                            name="shipping_country"
                                             className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:border-blue-300 sm:text-sm"
                                             defaultValue={address2.country}
                                             form="order"
+                                            onChange={handleChange}
                                         />
                                     </div>
 
                                     <div className="my-2 block">
-                                        <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700">
+                                        <label htmlFor="shipping_zipCode" className="block text-sm font-medium text-gray-700">
                                             CEP
                                         </label>
                                         <input
                                             type="text"
-                                            id="zipCode"
-                                            name="zipCode"
+                                            id="shipping_zipCode"
+                                            name="shipping_zipCode"
                                             className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring focus:ring-blue-200 focus:border-blue-300 sm:text-sm"
                                             defaultValue={address2.zip_code}
                                             form="order"
+                                            onChange={handleChange}
                                         />
                                     </div>
                                 </div>
