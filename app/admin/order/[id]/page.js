@@ -57,7 +57,7 @@ export default async function OrderDetails({ params }) {
     // Format status for display
     const getStatusDisplay = (status) => {
         switch (status) {
-            case "completed": return "Completado";
+            case "completed": return "Pago";
             case "shipped": return "Enviado";
             case "payment-pending": return "Pagamento Pendente";
             case "pending-verification": return "Aguardando Verificação";

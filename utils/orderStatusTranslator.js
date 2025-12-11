@@ -1,5 +1,5 @@
 let dictionary = {
-    "completed": "concluído",
+    "completed": "pago",
     "shipped": "enviado",
     "payment-pending": "pagamento pendente",
     "payment_pending": "pagamento pendente",

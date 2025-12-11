@@ -30,12 +30,12 @@ const OrdersPage = ({ userId, className }) => {
 	}, [])
 
 	return (
-		<div className={`${className} container mx-auto mt-10 px-4`}>
-			<h1 className="text-2xl font-bold mb-5 text-center md:text-left">Seus Pedidos</h1>
+		<div className={`${className} w-full`}>
+			<h1 className="text-2xl font-bold mb-5">Seus Pedidos</h1>
 			
 			{/* Scroll horizontal em telas pequenas */}
-			<div className="overflow-x-auto">
-				<Table className="table-auto w-full">
+			<div className="overflow-x-auto -mx-8 px-8">
+				<Table className="table-auto w-full min-w-[600px]">
 					<TableHead className="bg-gray-200">
 						<TableRow>
 							<TableHeaderCell className="text-center">ID</TableHeaderCell>

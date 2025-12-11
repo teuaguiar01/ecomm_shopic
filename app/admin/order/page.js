@@ -1,17 +1,24 @@
 import { prisma } from "@/utils/prisma";
 import OrdersTable from "@/components/admin/ordersTable";
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function ManageOrders() {
     const orders = await prisma.order.findMany({
         select: {
             id: true,
             status: true,
             total: true,
+            createdAt: true,
             user: {
                 select: {
                     name: true
                 }
             }
+        },
+        orderBy: {
+            createdAt: 'desc'
         }
     })
 
@@ -30,7 +37,7 @@ export default async function ManageOrders() {
 
         switch (element.status) {
             case "completed":
-                element.status = "Completado";
+                element.status = "Pago";
                 console.log(`   ✅ Status mapeado para: "${element.status}"`);
                 break
             case "shipped":

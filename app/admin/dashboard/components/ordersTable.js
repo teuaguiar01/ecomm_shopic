@@ -82,7 +82,7 @@ function OrdersTable({ orders }) {
                 <div className="truncate">
                         <Text>Faturamento</Text>
                         <Metric className="truncate">{numberformatter(total, 2)}</Metric>
-                        <Text className='text-xs'>Apenas dos pedidos Completados</Text>
+                        <Text className='text-xs'>Apenas dos pedidos Pagos</Text>
                     </div>
 
                     {totalSold > 0 && (

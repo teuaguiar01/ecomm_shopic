@@ -1,6 +1,9 @@
 import OrdersTable from "./components/ordersTable";
 import { prisma } from "@/utils/prisma";
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function Dashboard() {
     const orders = await prisma.order.findMany({
         select: {
@@ -23,6 +26,9 @@ export default async function Dashboard() {
                 }
             },
             createdAt: true
+        },
+        orderBy: {
+            createdAt: 'desc'
         }
     });
 
