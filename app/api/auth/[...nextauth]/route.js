@@ -165,6 +165,10 @@ export const authOptions = {
     ],
     adapter: PrismaAdapter(prisma),
     secret: process.env.NEXTAUTH_SECRET,
+    pages: {
+        signIn: '/auth/signin',
+        verifyRequest: '/auth/verify-request',
+    },
     theme: {
         colorScheme:"light",
         buttonText: "#ffffff",
