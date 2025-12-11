@@ -282,6 +282,11 @@ async function deleteProduct(productId) {
 				}
 			})
 
+			// Revalidar as páginas
+			revalidatePath('/admin/products')
+			revalidatePath('/shop')
+			revalidatePath('/')
+
 			return { 
 				success: true, 
 				message: "Produto movido para categoria 'Inativos' pois possui pedidos associados. Ele não aparecerá mais na loja." 
@@ -301,6 +306,11 @@ async function deleteProduct(productId) {
 					id: parseInt(productId)
 				}
 			})
+
+			// Revalidar as páginas
+			revalidatePath('/admin/products')
+			revalidatePath('/shop')
+			revalidatePath('/')
 
 			return { success: true, message: "Produto deletado com sucesso" }
 		}
