@@ -69,8 +69,8 @@ const ProfileEditComponent = ({ params }) => {
   if (status == "authenticated") {
 
     return (
-      <div className='flex my-10 gap-4 max-w-7xl w-full'>
-        <div className="max-w-md mx-auto bg-white rounded-lg p-8 border">
+      <div className='flex flex-col lg:flex-row my-10 gap-4 max-w-7xl w-full mx-auto px-4'>
+        <div className="w-full lg:w-auto lg:max-w-md bg-white rounded-lg p-8 border flex-shrink-0">
           <h1 className="text-2xl mb-4 text-bold">Editar Conta</h1>
 
           <div className="mb-4">
@@ -196,7 +196,7 @@ const ProfileEditComponent = ({ params }) => {
 
         </div>
        
-        <div className="mx-auto bg-white rounded-lg p-8 border w-full">
+        <div className="w-full bg-white rounded-lg p-8 border overflow-hidden">
           <UserOrders userId={session.user.id} className={""}/>
         </div>
       </div>

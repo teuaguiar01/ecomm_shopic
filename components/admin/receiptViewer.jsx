@@ -165,7 +165,7 @@ const ReceiptViewer = ({ orderId, currentStatus = "payment-pending" }) => {
               <option value="payment-pending">Pagamento Pendente</option>
               <option value="pending-verification">Aguardando Verificação</option>
               <option value="processing">Processando</option>
-              <option value="completed">Completado</option>
+              <option value="completed">Pago</option>
               <option value="shipped">Enviado</option>
               <option value="delivered">Entregue</option>
               <option value="canceled">Cancelado</option>
@@ -216,7 +216,7 @@ const ReceiptViewer = ({ orderId, currentStatus = "payment-pending" }) => {
              currentStatus === "shipped" ? "Enviado" :
              currentStatus === "delivered" ? "Entregue" :
              currentStatus === "canceled" ? "Cancelado" :
-             currentStatus === "completed" ? "Completado" :
+             currentStatus === "completed" ? "Pago" :
              currentStatus}
           </span>
         </div>

@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
 import { getReceiptUrl } from "@/utils/receiptStorage";
-import { ImageIcon, ExternalLinkIcon } from "lucide-react";
 
 const ReceiptLink = ({ orderId }) => {
   const [hasReceipt, setHasReceipt] = useState(false);
@@ -39,24 +38,20 @@ const ReceiptLink = ({ orderId }) => {
   if (!hasReceipt) {
     return (
       <span className="text-gray-400 text-sm">
-        Sem comprovante
+        -
       </span>
     );
   }
 
   return (
-    <div className="flex items-center space-x-2">
-      <a
-        href={receiptUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center space-x-1 text-blue-600 hover:text-blue-800 transition-colors"
-        title="Ver comprovante"
-      >
-        <ImageIcon className="h-4 w-4" />
-        <ExternalLinkIcon className="h-3 w-3" />
-      </a>
-    </div>
+    <a
+      href={receiptUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-blue-600 hover:text-blue-800 hover:underline transition-colors text-sm"
+    >
+      Comprovante
+    </a>
   );
 };
 

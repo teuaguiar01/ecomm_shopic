@@ -1,28 +1,60 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { ToggleGroup } from './toggleGroup'
 import { useCart } from '@/components/CartContext'
 import { toast } from 'react-toastify'
-import { CartItem } from './cartItem'
 
 export default function Filtros({ produto }) {
 	const [sku, setSku] = useState()
 	const [price, setPrice] = useState()
     const [enable, setEnable] = useState()
 	const [stock, setStock] = useState(1)
+	const [qty, setQty] = useState(1)
 	const router = useRouter()
 
-	useEffect(() => {
-		for (let i = 0; i < produto.product_item.length; i++) {
-			if (produto.product_item[i].sku == sku) {
-				setPrice(produto.product_item[i].price)
-				setStock(produto.product_item[i].amount)
-				setQty(Math.min(qty, produto.product_item[i].amount))
+	// Agrupar itens por tamanho usando useMemo para evitar recalcular
+	const items_produto = useMemo(() => {
+		const groupedItems = produto.product_item.reduce((acc, item) => {
+			const existingItem = acc.find(i => i.size === item.size);
+			if (existingItem) {
+				// Se já existe um item com esse tamanho, somar o estoque
+				existingItem.amount += item.amount;
+				// Manter o menor preço
+				existingItem.price = Math.min(existingItem.price, item.price);
+				// Adicionar SKUs alternativos
+				if (!existingItem.skus) {
+					existingItem.skus = [existingItem.sku];
+				}
+				existingItem.skus.push(item.sku);
+			} else {
+				// Adicionar novo item
+				acc.push({ ...item });
 			}
+			return acc;
+		}, []);
+
+		// Ordenar por tamanho
+		const tamanhoOrder = { 'PP': 1,'P': 2, 'M': 3, 'G': 4, 'GG': 5 };
+		groupedItems.sort((a, b) => {
+			const tamanhoA = tamanhoOrder[a.size] || 999;
+			const tamanhoB = tamanhoOrder[b.size] || 999;
+			return tamanhoA - tamanhoB;
+		});
+
+		return groupedItems;
+	}, [produto.product_item]);
+
+	useEffect(() => {
+		// Buscar no array agrupado
+		const selectedItem = items_produto.find(item => item.sku === sku);
+		if (selectedItem) {
+			setPrice(selectedItem.price);
+			setStock(selectedItem.amount);
+			setQty(Math.min(qty, selectedItem.amount));
 		}
-	}, [sku])
+	}, [sku, items_produto])
 
 	const { addToCart, cartItems } = useCart()
 	function handleClick() {
@@ -48,8 +80,6 @@ export default function Filtros({ produto }) {
 		}
 	}
 
-	const [qty, setQty] = useState(1)
-
 	function addQty() {
 		setQty(Math.min(qty + 1, stock))
 	}
@@ -59,20 +89,6 @@ export default function Filtros({ produto }) {
 			setQty(qty - 1)
 		}
 	}
-
-	function OrderByTamanho(a,b){
-		
-		// Se os nomes são iguais, comparar pelos tamanhos 'P', 'M', 'G'
-		const tamanhoOrder = { 'PP': 1,'P': 2, 'M': 3, 'G': 4, 'GG': 5 };
-		const tamanhoA = tamanhoOrder[a.size];
-		const tamanhoB = tamanhoOrder[b.size];
-		
-		return tamanhoA - tamanhoB;
-	}
-	
-	
-	const items_produto = produto.product_item
-	items_produto.sort(OrderByTamanho)
 	
 	return (
 		<>
@@ -83,7 +99,7 @@ export default function Filtros({ produto }) {
 					onChange={setSku}
 					className="flex gap-4"
 				>
-					{produto.product_item.map((item, index) => {
+					{items_produto.map((item) => {
 						return (
 							item.sku && ( // Only render if item.sku is not empty
 								<ToggleGroup.Button
