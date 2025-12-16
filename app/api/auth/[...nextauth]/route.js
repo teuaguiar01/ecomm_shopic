@@ -181,6 +181,8 @@ export const authOptions = {
             session.user.id = user.id
             session.user.name = user.name
             session.user.role = user.role
+            session.user.cpf = user.cpf
+            session.user.phone = user.phone
 
             return session
           }

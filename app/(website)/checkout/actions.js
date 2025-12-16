@@ -4,7 +4,77 @@ import { getServerSession } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/utils/prisma"
 import { redirect } from 'next/navigation'
 
-export async function createOrder({ user, billing_address, shipping_same_as_billing, shipping_address, gateway, cart, total }) {
+export async function createOrder({ user, billing_address, shipping_same_as_billing, shipping_address, gateway, cart, total, cpf, phone }) {
+    // Validar CPF e telefone
+    if (!cpf || !phone) {
+        return { error: "Por favor, preencha seu CPF e telefone." }
+    }
+
+    // Atualizar dados do usuário (CPF, telefone e nome)
+    console.log('Atualizando usuário:', user, 'com dados:', {
+        name: billing_address.name,
+        cpf: cpf,
+        phone: phone
+    })
+    
+    await prisma.user.update({
+        where: { id: user },
+        data: {
+            name: billing_address.name,
+            cpf: cpf,
+            phone: phone
+        }
+    })
+    
+    console.log('Usuário atualizado com sucesso')
+
+    // Verificar se o usuário já tem um endereço salvo (qualquer tipo)
+    const existingAddress = await prisma.address.findFirst({
+        where: {
+            users_id: user,
+            orders_id: null // Apenas endereços do perfil, não de pedidos específicos
+        }
+    })
+
+    // Salvar ou atualizar o endereço no perfil do usuário
+    if (existingAddress) {
+        console.log('Atualizando endereço existente:', existingAddress.id)
+        await prisma.address.update({
+            where: { id: existingAddress.id },
+            data: {
+                street: billing_address.street,
+                city: billing_address.city,
+                complement: billing_address.complement,
+                country: billing_address.country,
+                neighborhood: billing_address.neighborhood,
+                number: billing_address.number,
+                state: billing_address.state,
+                zip_code: billing_address.zip_code,
+                type: 'billing_shipping',
+                name: billing_address.name
+            }
+        })
+    } else {
+        console.log('Criando novo endereço para usuário:', user)
+        await prisma.address.create({
+            data: {
+                street: billing_address.street,
+                city: billing_address.city,
+                complement: billing_address.complement,
+                country: billing_address.country,
+                neighborhood: billing_address.neighborhood,
+                number: billing_address.number,
+                state: billing_address.state,
+                zip_code: billing_address.zip_code,
+                type: 'billing_shipping',
+                name: billing_address.name,
+                user: {
+                    connect: { id: user }
+                }
+            }
+        })
+    }
+
     const ids = [], orderItems = []
 
     cart.forEach(cartItem => {

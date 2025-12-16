@@ -160,7 +160,7 @@ export default async function OrderDetails({ params }) {
 
                         {order.address && order.address.length > 0 && (
                             <div>
-                                <span className="font-medium text-gray-700">Endereço de Entrega:</span>
+                                <span className="font-medium text-gray-700">Endereço de entrega:</span>
                                 {order.address.map((addr, index) => (
                                     <div key={index} className="mt-2 p-3 bg-gray-50 rounded">
                                         <p className="text-gray-900">

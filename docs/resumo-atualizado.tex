@@ -1,0 +1,11 @@
+\section*{Resumo}
+
+O ShopIC representa uma solução completa de e-commerce acadêmico desenvolvida com tecnologias modernas para atender às necessidades do Instituto de Computação da UFBA. A plataforma combina uma arquitetura fullstack eficiente utilizando Next.js 14 com App Router, integrando frontend performático (React 18/Tailwind CSS 3) e backend robusto (API Routes/Server Actions/Prisma ORM) em um monorepo coeso.
+
+O sistema oferece funcionalidades completas de e-commerce: catálogo de produtos com variações de tamanho, carrinho de compras persistente, checkout autenticado, processamento de pagamentos via PIX com geração automática de QR Codes, upload e verificação de comprovantes através do Firebase Storage, e acompanhamento de status de pedidos. A autenticação passwordless via NextAuth com magic links por email proporciona segurança sem a complexidade de gerenciamento de senhas.
+
+O painel administrativo oferece gestão completa de produtos, pedidos e usuários, com funcionalidades avançadas como exclusão inteligente de produtos (preservando histórico de pedidos através de categoria "Inativos"), visualização de comprovantes de pagamento, atualização de status de pedidos e dashboard com métricas de vendas. A interface utiliza componentes da biblioteca Tremor para visualizações profissionais de dados.
+
+A modelagem de dados no PostgreSQL garante integridade referencial e preservação de histórico, com o Prisma ORM proporcionando type-safety e migrações versionadas. A arquitetura de rotas organizada em camadas (públicas, autenticadas e administrativas) com Server Components e Server Actions do Next.js 14 resulta em excelente performance e SEO otimizado.
+
+Esta plataforma demonstra na prática como tecnologias web modernas podem ser aplicadas para resolver problemas reais de forma eficaz, segura e escalável, servindo como modelo para soluções similares no ambiente acadêmico.

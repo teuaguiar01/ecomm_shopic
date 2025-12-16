@@ -10,6 +10,7 @@ import {
 	TableHeaderCell,
 	TableRow,
 } from '@tremor/react'
+import { statusTranslator } from '@/utils/orderStatusTranslator'
 
 const OrdersPage = ({ userId, className }) => {
 	const [orders, setOrders] = useState([])
@@ -56,7 +57,7 @@ const OrdersPage = ({ userId, className }) => {
 									{"R$ " + order.total.toFixed(2)}
 								</TableCell>
 								<TableCell className="text-center hidden sm:table-cell">
-									{order.status}
+									<span className="capitalize">{statusTranslator(order.status)}</span>
 								</TableCell>
 								<TableCell className="text-center">
 									<Link href={`/statusPedido/${order.id}`}>
