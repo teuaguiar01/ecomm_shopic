@@ -1,0 +1,83 @@
+\subsection{Frontend}
+
+O frontend do ShopIC foi desenvolvido com React 18, integrado ao Next.js 14 com App Router, que atua como um metaframework otimizando a construção de interfaces modernas e performáticas. A escolha do Next.js 14 foi estratégica para aproveitar seus recursos avançados, como Server Components, Client Components, renderização do lado do servidor (SSR) e geração estática de páginas (SSG).
+
+A arquitetura de rotas foi organizada em três categorias principais: rotas públicas (home, loja, detalhes de produtos), rotas autenticadas (checkout, pagamento, status de pedido, perfil do usuário e histórico de pedidos) e rotas administrativas (dashboard, gerenciamento de pedidos, produtos e usuários). O SSR é empregado estrategicamente para páginas dinâmicas que requerem dados atualizados, como o dashboard administrativo e detalhes de pedidos, onde o conteúdo é pré-renderizado no servidor para a primeira carga. Isso resulta em um \textit{First Contentful Paint} (FCP) e \textit{Time to Interactive} (TTI) significativamente melhorados, proporcionando uma experiência de usuário mais rápida e otimizada para \textit{Search Engine Optimization} (SEO). Já o SSG é utilizado para páginas com conteúdo mais estático, gerando HTML pré-construído em tempo de build, que pode ser servido por CDNs para carregamento quase instantâneo.
+
+A estrutura de pastas segue o padrão recomendado do Next.js 14 App Router, com a pasta \texttt{app/} organizando as rotas através de convenções de nomenclatura de arquivos (\texttt{page.js}, \texttt{layout.js}, \texttt{loading.js}), enquanto a pasta \texttt{components/} centraliza componentes reutilizáveis organizados por funcionalidade (admin, categories, order, statusPedido, ui), promovendo modularidade e manutenibilidade. A navegação entre páginas é gerenciada pelo sistema de rotas nativo do Next.js, garantindo uma transição fluida e responsiva com prefetching automático.
+
+O carregamento de dados é realizado através de Server Actions e chamadas a APIs internas RESTful, com respostas em formato JSON. Os Server Actions, uma funcionalidade do Next.js 14, permitem a execução de código server-side diretamente de componentes, eliminando a necessidade de criar endpoints API separados para operações simples de CRUD, assegurando uma comunicação eficiente e type-safe entre frontend e backend.
+
+A autenticação do usuário é implementada com NextAuth.js utilizando um sistema passwordless baseado em magic links enviados por email. Ao invés de senhas tradicionais, o usuário recebe um link único de autenticação via SMTP Google, que ao ser clicado, estabelece uma sessão segura. Os tokens de sessão são armazenados em cookies seguros (HTTP-only, SameSite), protegendo-os contra ataques de \textit{Cross-Site Scripting} (XSS) e \textit{Cross-Site Request Forgery} (CSRF). A gestão do estado de autenticação é feita via Context API do React (\texttt{AuthProvider.js}), permitindo um controle global e reativo do acesso a áreas restritas, com verificação de roles (user/admin) para autorização granular.
+
+A interface é estilizada com Tailwind CSS 3, uma estrutura utility-first que não só acelera o desenvolvimento de layouts modernos e responsivos para diferentes tamanhos de tela, mas também otimiza o tamanho final do CSS em produção através da purgação de classes não utilizadas. Componentes da biblioteca Tremor são utilizados para visualizações de dados no painel administrativo, oferecendo tabelas, métricas e gráficos profissionais. Componentes nativos do Next.js, como \texttt{next/image} para otimização automática de imagens (lazy loading, responsive images, WebP conversion) e \texttt{next/font} para carregamento otimizado de fontes, são utilizados para garantir o melhor desempenho e acessibilidade da aplicação.
+
+O gerenciamento de estado do carrinho de compras é implementado através do Context API (\texttt{CartContext.js}), com persistência em sessão do usuário no banco de dados, permitindo que o carrinho seja mantido entre diferentes dispositivos e sessões de navegação.
+
+\subsection{Backend}
+
+O backend do ShopIC foi arquitetado como um conjunto de rotas API integradas ao Next.js 14, desenvolvidas em JavaScript com suporte a TypeScript para garantir robustez, manutenibilidade e segurança de tipo em tempo de compilação. A arquitetura backend é composta por dois componentes principais: API Routes (\texttt{app/api/}) e Server Actions (\texttt{actions.js} distribuídos nas pastas de features).
+
+As API Routes são responsáveis por operações que requerem endpoints HTTP explícitos, como a autenticação via NextAuth (\texttt{/api/auth/[...nextauth]}), exclusão de produtos (\texttt{/api/delete-product}) e outras operações que necessitam de controle fino sobre requisições e respostas HTTP. Já os Server Actions são funções server-side marcadas com a diretiva \texttt{'use server'}, que podem ser invocadas diretamente de componentes React, simplificando operações de CRUD e lógica de negócio sem a necessidade de criar endpoints REST separados.
+
+Essas rotas e actions são responsáveis por todo o processamento de requisições do frontend, a execução das regras de negócio do e-commerce (e.g., cálculo de preços, gestão de estoque, validação de pedidos, processamento de pagamentos PIX) e a interação persistente com o banco de dados através do Prisma ORM.
+
+O Prisma ORM foi adotado para abstrair a complexidade das interações com o banco de dados. Sua principal vantagem reside na geração de um cliente ORM tipado a partir do schema (\texttt{schema.prisma}), que permite consultas type-safe e refatoráveis, além de agilizar o desenvolvimento ao simplificar operações \textit{CRUD} (\textit{Create, Read, Update, Delete}) e gerenciamento de migrações de esquema através do comando \texttt{prisma migrate}. O Prisma Studio oferece uma interface visual para inspeção e manipulação de dados durante o desenvolvimento.
+
+A segurança é uma prioridade, com a implementação de um sistema de autenticação passwordless baseado em NextAuth.js. Ao solicitar login, o usuário recebe um email com um magic link contendo um token único e temporário. Ao clicar no link, o NextAuth valida o token e estabelece uma sessão segura, armazenada no banco de dados (tabela \texttt{Session}). Middlewares e callbacks do NextAuth são empregados para interceptar requisições, validar a autenticidade das sessões, e aplicar políticas de autorização granulares baseadas em roles (user/admin). Isso garante que apenas usuários autenticados e com as permissões adequadas possam acessar rotas sensíveis, como as do painel administrativo, protegendo funcionalidades críticas \cite{NextAuthSecurity}.
+
+O sistema implementa funcionalidades avançadas de gerenciamento de produtos, incluindo um mecanismo inteligente de exclusão: produtos que possuem pedidos associados não são deletados fisicamente, mas movidos para uma categoria especial "Inativos", preservando a integridade histórica dos pedidos enquanto os remove da visualização da loja. Produtos sem pedidos associados podem ser deletados completamente do sistema.
+
+Além das funcionalidades centrais, o backend gerencia serviços complementares, incluindo o processamento de pagamentos via PIX. A geração de QR Codes PIX é realizada através da biblioteca \texttt{pix-utils}, que cria códigos PIX estáticos com informações do pedido, valor e chave PIX do comerciante. Os comprovantes de pagamento enviados pelos usuários são armazenados no Firebase Storage, com URLs persistidas no banco de dados para verificação administrativa. A arquitetura segue boas práticas de design de API RESTful, tratamento de erros padronizado, validação de dados server-side, e estruturação modular de código através de Server Actions organizados por domínio (products, orders, users, checkout), visando garantir alta disponibilidade, manutenibilidade e escalabilidade do sistema.
+
+Utilitários especializados foram desenvolvidos para suportar operações específicas, como \texttt{orderStatusTranslator.js} para tradução consistente de status de pedidos em toda a aplicação, \texttt{receiptStorage.js} para gerenciamento de comprovantes no Firebase Storage, e \texttt{prisma.js} para instanciação singleton do cliente Prisma, evitando múltiplas conexões ao banco de dados.
+
+\subsection{Banco de Dados}
+
+O armazenamento de dados do ShopIC é realizado em um banco de dados relacional PostgreSQL, selecionado por sua robustez, integridade transacional (ACID) e capacidade de lidar eficientemente com dados estruturados e relacionamentos complexos. A gestão e interação com o esquema são facilitadas pelo Prisma ORM, que além de fornecer um cliente ORM tipado para o backend, auxilia no gerenciamento de migrações de esquema através do Prisma Migrate, garantindo a evolução controlada e versionada do banco de dados.
+
+A modelagem de dados foi projetada para refletir as regras de negócio de um e-commerce completo e garantir a integridade referencial através de constraints e relacionamentos bem definidos. As entidades principais são:
+
+\begin{itemize}
+\item \textbf{User}: Armazena informações dos usuários, incluindo identificador único (CUID), nome, email (único), data de verificação de email e role (user/admin) para controle de acesso. Relaciona-se com pedidos, endereços, avaliações, contas de autenticação e sessões.
+
+\item \textbf{Product}: Representa os produtos disponíveis para venda, com metadados como nome, descrição detalhada, categoria associada (\texttt{product\_categories\_id}) e rating médio calculado a partir das avaliações. Cada produto pode ter múltiplas variações através da entidade \texttt{ProductItem}.
+
+\item \textbf{ProductItem}: Esta entidade é crucial para modelar variações de um produto (e.g., diferentes tamanhos de uma camiseta), permitindo que cada variação tenha seu próprio SKU (Stock Keeping Unit) único, preço, quantidade em estoque (\texttt{amount}) e tamanho. O SKU serve como chave primária, garantindo unicidade de cada variação.
+
+\item \textbf{ProductCategory}: Categoriza os produtos para facilitar navegação e filtragem. Inclui uma categoria especial "Inativos" para produtos que não devem mais aparecer na loja mas precisam ser mantidos por terem histórico de pedidos.
+
+\item \textbf{Order}: Registra as transações de compra realizadas, incluindo timestamp de criação (\texttt{createdAt}), referência ao usuário comprador, valor total, e status do pedido (payment-pending, pending\_verification, processing, completed, shipped, delivered, canceled). Relaciona-se com itens do pedido e endereço de entrega.
+
+\item \textbf{OrderItem}: Essencial para manter o histórico de compras, esta entidade captura os detalhes de cada produto dentro de um pedido, incluindo o preço vigente no momento da compra, SKU do produto, e quantidade. Essa abordagem garante a integridade histórica dos dados do pedido, mesmo que o preço ou disponibilidade do produto original mude no catálogo posteriormente.
+
+\item \textbf{Address}: Armazena endereços completos (rua, número, complemento, bairro, cidade, estado, país, CEP), podendo estar associados tanto a usuários (endereços salvos) quanto a pedidos específicos (endereço de entrega). Suporta diferentes tipos de endereço através do campo \texttt{type}.
+
+\item \textbf{Review}: Permite que usuários avaliem produtos, com título, texto descritivo e rating numérico. As avaliações são agregadas para calcular o rating médio de cada produto.
+
+\item \textbf{Session}: Gerenciada pelo NextAuth, armazena sessões ativas dos usuários com token único, data de expiração e conteúdo do carrinho em formato JSON, permitindo persistência do carrinho entre sessões.
+
+\item \textbf{Account}: Gerenciada pelo NextAuth, armazena informações de contas de autenticação vinculadas a usuários, incluindo provider (email), tokens de acesso e refresh, e metadados de autenticação.
+
+\item \textbf{VerificationToken}: Gerenciada pelo NextAuth, armazena tokens temporários para verificação de email nos magic links, com identificador, token único e data de expiração.
+
+\item \textbf{Option}: Tabela de configurações do sistema, armazenando pares chave-valor para opções globais da aplicação.
+\end{itemize}
+
+As relações entre essas entidades são estabelecidas através de chaves primárias e estrangeiras, com restrições de integridade referencial configuradas para evitar inconsistências. Por exemplo, a exclusão em cascata (\texttt{onDelete: Cascade}) é configurada entre \texttt{User} e \texttt{Session}/\texttt{Account} para garantir limpeza automática de dados relacionados. Índices apropriados foram definidos automaticamente pelo Prisma em chaves primárias, chaves estrangeiras e campos únicos (e.g., email, sessionToken, SKU) para otimizar o desempenho das consultas e garantir uma experiência de navegação e compra fluida.
+
+A modelagem visa um equilíbrio entre a normalização para consistência de dados e a performance para operações de e-commerce. Campos calculados como o rating médio de produtos são atualizados através de lógica de aplicação, enquanto campos históricos como preço em \texttt{OrderItem} são desnormalizados intencionalmente para preservar informações no momento da transação. O uso de tipos de dados apropriados (String, Int, Float, DateTime, Json) e constraints (unique, required) garante a qualidade e integridade dos dados em nível de banco de dados.
+
+\subsection{Integrações Externas}
+
+O ShopIC integra-se a serviços externos essenciais para funcionalidades críticas do sistema:
+
+\begin{itemize}
+\item \textbf{SMTP Google}: Utilizado .para envio de emails de autenticação (magic links) através do Nodemailer. Os emails são customizados em português com templates HTML responsivos, incluindo botões de ação e instruções claras para o usuário.
+
+\item \textbf{Firebase Storage}: Armazena comprovantes de pagamento PIX enviados pelos usuários. Os arquivos são organizados por ID de pedido, com URLs públicas geradas para acesso administrativo. A integração garante armazenamento seguro e escalável de arquivos binários fora do banco de dados relacional.
+
+\item \textbf{PIX Utils}: Biblioteca JavaScript utilizada para geração de códigos PIX estáticos. Cria payloads PIX válidos com informações do comerciante (nome, cidade, chave PIX), valor da transação e informações adicionais (ID do pedido). O payload é convertido em QR Code através da biblioteca \texttt{qrcode}, permitindo pagamento instantâneo via aplicativos bancários.
+\end{itemize}
+
+Essas integrações são gerenciadas através de variáveis de ambiente (\texttt{.env}) para configuração segura de credenciais, seguindo boas práticas de segurança e permitindo diferentes configurações entre ambientes de desenvolvimento, homologação e produção.

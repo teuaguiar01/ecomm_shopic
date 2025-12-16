@@ -134,7 +134,7 @@ export default function CardConfirmacao(props) {
 				</div>
 			</div>
 			<div className="p-6 h-auto border border-black w-full max-w-4xl rounded-sm">
-				<h4 className="font-bold">Informações de Cobrança</h4>
+				<h4 className="font-bold">Informações de cobrança</h4>
 
 				<p>{user.name}</p>
 				<p>Cep: {adress[0].zip_code}</p>

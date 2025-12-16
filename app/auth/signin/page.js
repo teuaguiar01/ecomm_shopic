@@ -66,7 +66,7 @@ export default function SignIn() {
               color: '#111827',
               margin: 0
             }}>
-              Fazer Login
+              Login
             </h2>
             <p style={{ 
               marginTop: '8px',

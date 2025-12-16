@@ -4,10 +4,10 @@ import { Menu, Search, ShoppingCart, UserCircle2, X } from 'lucide-react'
 import Link from 'next/link'
 import { SearchProduct } from './SearchProduct'
 import Image from 'next/image'
-import { useEffect, useState, useTransition } from 'react'
+import { useEffect, useState, useTransition, useRef } from 'react'
 import { getNameDB } from '@/app/(website)/actionsSettings'
 import NavbarCart from './navbarCart'
-import { useSession } from 'next-auth/react'
+import { useSession, signOut } from 'next-auth/react'
 
 export default function Navbar() {
 	const [name, setName] = useState('')
@@ -15,6 +15,8 @@ export default function Navbar() {
 	const { data: session, status } = useSession()
 	const [filterValue, setFilterValue] = useState('')
 	const [isMenuOpen, setIsMenuOpen] = useState(false)
+	const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false)
+	const dropdownRef = useRef(null)
 
 	async function getName() {
 		if (!isPending)
@@ -26,6 +28,20 @@ export default function Navbar() {
 
 	useEffect(() => {
 		getName()
+	}, [])
+
+	// Fechar dropdown ao clicar fora
+	useEffect(() => {
+		function handleClickOutside(event) {
+			if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+				setIsProfileDropdownOpen(false)
+			}
+		}
+
+		document.addEventListener('mousedown', handleClickOutside)
+		return () => {
+			document.removeEventListener('mousedown', handleClickOutside)
+		}
 	}, [])
 
 	return (
@@ -82,13 +98,47 @@ export default function Navbar() {
 							<NavbarCart />
 						</Link>
 					</div>
-					<div>
-						<Link
-							href="/user"
-							title={status === 'authenticated' ? 'Olá ' + session?.user?.name : ''}
+					<div className="relative" ref={dropdownRef}>
+						<button
+							onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+							title={status === 'authenticated' ? 'Olá ' + session?.user?.name : 'Fazer login'}
+							className="focus:outline-none"
 						>
-							<UserCircle2 className="text-xl cursor-pointer" />
-						</Link>
+							<UserCircle2 className="text-xl cursor-pointer hover:opacity-70 transition-opacity" />
+						</button>
+						
+						{isProfileDropdownOpen && (
+							<div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+								{status === 'authenticated' ? (
+									<>
+										<Link
+											href="/user"
+											className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+											onClick={() => setIsProfileDropdownOpen(false)}
+										>
+											Perfil
+										</Link>
+										<button
+											onClick={() => {
+												setIsProfileDropdownOpen(false)
+												signOut()
+											}}
+											className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+										>
+											Logout
+										</button>
+									</>
+								) : (
+									<Link
+										href="/auth/signin"
+										className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+										onClick={() => setIsProfileDropdownOpen(false)}
+									>
+										Fazer Login
+									</Link>
+								)}
+							</div>
+						)}
 					</div>
 				</div>
 			</div>

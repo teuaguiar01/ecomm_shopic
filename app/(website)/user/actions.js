@@ -48,7 +48,9 @@ async function updateUser(data, address) {
                 id: (await getServerSession()).user.id
             },
             data: {
-                name: data.name
+                name: data.name,
+                cpf: data.cpf,
+                phone: data.phone
             }
         })
     )
@@ -100,7 +102,11 @@ async function updateUser(data, address) {
         )
     }
 
-    prisma.$transaction(updates)
+    await prisma.$transaction(updates)
+    
+    // Revalidar a página para atualizar os dados
+    revalidatePath('/user')
+    
     return true
 }
 
