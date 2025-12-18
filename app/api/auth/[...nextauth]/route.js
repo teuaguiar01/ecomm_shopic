@@ -36,6 +36,24 @@ function PrismaAdapter(p) {
         updateSession: (data) => p.session.update({ where: { sessionToken: data.sessionToken }, data }),
         deleteSession: (sessionToken) => p.session.deleteMany({ where: { sessionToken } }),
         async createVerificationToken(data) {
+            console.log('Criando token de verificação:', {
+                identifier: data.identifier,
+                expires: data.expires,
+                now: new Date(),
+                validFor: (data.expires - new Date()) / 1000 / 60, // minutos
+            });
+            
+            // Deletar tokens antigos para o mesmo email antes de criar um novo
+            // Isso evita que múltiplos tokens fiquem ativos ao mesmo tempo
+            try {
+                await p.verificationToken.deleteMany({
+                    where: { identifier: data.identifier }
+                });
+                console.log('Tokens antigos deletados para:', data.identifier);
+            } catch (error) {
+                console.log('Nenhum token antigo para deletar');
+            }
+            
             const verificationToken = await p.verificationToken.create({ data });
             // @ts-expect-errors // MongoDB needs an ID, but we don't
             if (verificationToken.id)
@@ -44,6 +62,32 @@ function PrismaAdapter(p) {
         },
         async useVerificationToken(identifier_token) {
             try {
+                // Primeiro busca o token para verificar se existe e se está válido
+                const token = await p.verificationToken.findUnique({
+                    where: { identifier_token },
+                });
+                
+                if (!token) {
+                    console.log('Token não encontrado:', identifier_token);
+                    return null;
+                }
+                
+                // Verifica se o token expirou
+                const now = new Date();
+                if (token.expires < now) {
+                    console.log('Token expirado:', {
+                        expires: token.expires,
+                        now: now,
+                        diff: (now - token.expires) / 1000 / 60, // diferença em minutos
+                    });
+                    // Deleta o token expirado
+                    await p.verificationToken.delete({
+                        where: { identifier_token },
+                    });
+                    return null;
+                }
+                
+                // Token válido, deleta e retorna
                 const verificationToken = await p.verificationToken.delete({
                     where: { identifier_token },
                 });
@@ -55,8 +99,11 @@ function PrismaAdapter(p) {
             catch (error) {
                 // If token already used/deleted, just return null
                 // https://www.prisma.io/docs/reference/api-reference/error-reference#p2025
-                if (error.code === "P2025")
+                if (error.code === "P2025") {
+                    console.log('Token já foi usado ou deletado');
                     return null;
+                }
+                console.error('Erro ao usar token de verificação:', error);
                 throw error;
             }
         },
@@ -149,6 +196,7 @@ export const authOptions = {
             type: "email",
             name: "Email Sign-in",
             from: process.env.EMAIL_FROM,
+            maxAge: 24 * 60 * 60, // Token válido por 24 horas (em segundos)
             async sendVerificationRequest({ identifier: email, url, provider }) {
                 const { host } = new URL(url);
                 const transport = await import('nodemailer').then(m => m.default.createTransport(provider.server));

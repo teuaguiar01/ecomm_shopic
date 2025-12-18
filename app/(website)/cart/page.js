@@ -1,10 +1,9 @@
 'use client'
-import { CartItem } from '@/components/ui/cartItem'
 import { useCart } from '@/components/CartContext'
 import Link from 'next/link'
 
 export default function Cart() {
-	const { cartItems, cartTotal } = useCart()
+	const { cartItems, cartTotal, clearCart } = useCart()
 
 	return (
 		<div className="max-w-7xl w-full pt-5 pb-8 px-8">
@@ -63,9 +62,19 @@ export default function Cart() {
 						<div className="text-lg font-bold">Total: R${cartTotal.toFixed(2)}</div>
 					</div>
 
-					{/* Botão Finalizar Compra */}
-					<div className="mt-5 bg-zinc-50 p-5">
-						<Link href="/checkout">
+					{/* Botões de Ação */}
+					<div className="mt-5 bg-zinc-50 p-5 flex flex-col sm:flex-row gap-3">
+						<button 
+							onClick={() => {
+								if (window.confirm('Tem certeza que deseja limpar todo o carrinho?')) {
+									clearCart();
+								}
+							}}
+							className="bg-red-600 text-white border-2 border-red-600 hover:bg-transparent hover:text-red-600 duration-300 rounded-full py-2 px-4 sm:w-auto w-full"
+						>
+							Limpar Carrinho
+						</button>
+						<Link href="/checkout" className="flex-1">
 							<button className="bg-black text-white border-2 border-black hover:bg-transparent hover:text-black duration-300 w-full rounded-full py-2 px-4">
 								Finalizar compra
 							</button>
