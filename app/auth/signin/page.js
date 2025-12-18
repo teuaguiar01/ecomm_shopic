@@ -6,10 +6,18 @@ export default function SignIn() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [cooldown, setCooldown] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    
+    // Prevenir múltiplos cliques
+    if (loading || cooldown) {
+      return
+    }
+    
     setLoading(true)
+    setCooldown(true)
     setError('')
 
     try {
@@ -25,10 +33,14 @@ export default function SignIn() {
       } else {
         setError('Erro ao enviar o email. Tente novamente.')
         setLoading(false)
+        // Cooldown de 30 segundos antes de permitir novo envio
+        setTimeout(() => setCooldown(false), 30000)
       }
     } catch (err) {
       setError('Erro ao enviar o email. Tente novamente.')
       setLoading(false)
+      // Cooldown de 30 segundos antes de permitir novo envio
+      setTimeout(() => setCooldown(false), 30000)
     }
   }
 
@@ -129,7 +141,7 @@ export default function SignIn() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || cooldown}
               className="signin-button"
               style={{
                 width: '100%',
@@ -143,8 +155,19 @@ export default function SignIn() {
                 cursor: 'pointer'
               }}
             >
-              {loading ? 'Enviando...' : 'Enviar link de acesso'}
+              {loading ? 'Enviando...' : cooldown ? 'Aguarde para reenviar' : 'Enviar link de acesso'}
             </button>
+            
+            {cooldown && !loading && (
+              <p style={{
+                marginTop: '12px',
+                fontSize: '12px',
+                color: '#6b7280',
+                textAlign: 'center'
+              }}>
+                Aguarde 30 segundos antes de solicitar um novo link
+              </p>
+            )}
           </form>
 
           <div style={{ 
