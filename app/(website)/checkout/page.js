@@ -1,6 +1,6 @@
 'use client';
 
-import React, { startTransition, useEffect, useState } from 'react'
+import React, { startTransition, useEffect, useState, useCallback } from 'react'
 import ProductList from '@/components/order/productList';
 import RadioButton from '@/components/order/radioButton';
 import { CreditCardIcon } from "lucide-react";
@@ -19,9 +19,9 @@ const CheckoutPage = () => {
     const router = useRouter();
     const [userCpf, setUserCpf] = useState('');
     const [userPhone, setUserPhone] = useState('');
+    const [multipleAddresses, setMultipleAddresses] = useState(false);
 
-
-    const checkFields = () => {
+    const checkFields = useCallback(() => {
         // Campos obrigatórios do endereço de cobrança
         const billingFields = ['zipCode', 'city', 'state', 'country', 'neighborhood', 'complement', 'number', 'street', 'full_name', 'user_cpf', 'user_phone']; 
         
@@ -42,7 +42,7 @@ const CheckoutPage = () => {
 
         const allValid = billingValid && shippingValid;
         setFullField(allValid);
-    };
+    }, [multipleAddresses]);
 
     const handleChange = () => {
         checkFields();
@@ -96,8 +96,6 @@ const CheckoutPage = () => {
         country: "",
         zip_code: "",
     })
-
-    const [multipleAddresses, setMultipleAddresses] = useState(false)
 
     const [selectedOption, setSelectedOption] = useState(paymentOptions[0].label)
 
@@ -164,8 +162,6 @@ const CheckoutPage = () => {
 
     useEffect(() => {
         if (session?.user?.id) {
-            address.name = session?.user.name
-            address2.name = session?.user.name
             setUserCpf(session?.user.cpf || '')
             setUserPhone(session?.user.phone || '')
             startTransition(() => {
@@ -183,16 +179,15 @@ const CheckoutPage = () => {
                         }
                     });
                     setTimeout(() => checkFields(), 500);
-                    checkFields();
                 })
             })
         }
-    }, [address, address2, checkFields, session])
+    }, [session?.user?.id, session?.user?.cpf, session?.user?.phone, session?.user?.name, checkFields])
 
     // Revalidar quando multipleAddresses mudar
     useEffect(() => {
         setTimeout(() => checkFields(), 100);
-    }, [checkFields, multipleAddresses])
+    }, [multipleAddresses, checkFields])
 
     if (status === "unauthenticated") {
         return (
