@@ -45,9 +45,9 @@ export default function PaymentPage() {
         try {
             // Criar o código PIX usando pix-utils
             const pixData = createStaticPix({
-                merchantName: username || 'SHOPIC',
+                merchantName: 'SHOPIC',
                 merchantCity: 'Salvador',
-                pixKey: '85953866500', // Chave PIX
+                pixKey: '85953866500',
                 infoAdicional: `Pedido ${orderId}`,
                 transactionAmount: price
             });
